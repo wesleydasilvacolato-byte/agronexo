@@ -74,6 +74,14 @@ async function attachments(files){
       }else toast("Tipo de arquivo não aceito: "+f.name);
     }catch(err){toast(err.message)}
   }
+  // A Vercel limita o corpo de cada requisição a ~4,5 MB.
+  let inlineChars=0;
+  pendingFiles=pendingFiles.filter(f=>{
+    if(f.type==="audio")return true; // transcrito em uma chamada separada
+    const next=inlineChars+f.data.length;
+    if(next>3200000){toast("Mídias demais para uma mensagem. Envie menos arquivos.");return false}
+    inlineChars=next;return true
+  });
   const el=$("#attachment-info");
   if(el)el.textContent=pendingFiles.length?pendingFiles.map(f=>f.name).join(" · ").slice(0,170):"";
 }
