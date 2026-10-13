@@ -3,7 +3,7 @@ export default async function handler(req,res){
  if(!process.env.OPENAI_API_KEY)return res.status(503).json({error:"Transcrição indisponível. Configure OPENAI_API_KEY na Vercel."});
  try{
  const data=String(req.body?.data||"");
- if(!/^data:audio\/(webm|mpeg|mp3|mp4|ogg|wav|x-wav|m4a|aac);base64,[a-z0-9+/=]+$/i.test(data))return res.status(400).json({error:"Arquivo de áudio não compatível."});
+ if(!/^data:audio\/(webm|mpeg|mp3|mp4|ogg|wav|x-wav|m4a|aac)(?:;[^,]*)?;base64,[a-z0-9+/=]+$/i.test(data))return res.status(400).json({error:"Arquivo de áudio não compatível."});
  const raw=Buffer.from(data.split(",")[1],"base64");
  if(raw.length>12*1024*1024)return res.status(413).json({error:"Áudio excede 12 MB."});
  const mime=data.substring(5,data.indexOf(";")),ext=mime.split("/")[1]==="mpeg"?"mp3":mime.split("/")[1];
