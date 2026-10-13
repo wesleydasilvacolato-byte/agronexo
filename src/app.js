@@ -42,7 +42,51 @@ async function transcribe(file){const r=await fetch("/api/transcribe",{method:"P
 async function sendChat(){if(chatBusy)return;const field=$("#chat-text");let content=field?.value?.trim()||"";if(!content&&!pendingFiles.length)return;const c=activeChat(),files=pendingFiles.slice();pendingFiles=[];if(field)field.value="";chatBusy=true;const audio=files.filter(f=>f.type==="audio"),images=files.filter(f=>f.type==="image");const display=content+(audio.length?"\n[Áudio enviado]":"")+(images.length?"\n["+images.length+" imagem(ns)/quadro(s) enviado(s)]":"");c.messages.push({role:"user",content:display,time:new Date().toISOString()});if(c.messages.length===1)c.title=(content||"Mensagem multimídia").slice(0,50);save();chat($("#content"));const e=$("#messages");if(e)e.insertAdjacentHTML("beforeend",'<div class="bubble assistant" id="thinking">Sebastião está analisando...</div>');e.scrollTop=e.scrollHeight;try{for(const a of audio)content+="\n[Transcrição de áudio: "+await transcribe(a)+"]";const messages=c.messages.slice(-14).map(m=>({role:m.role,content:m.content}));messages[messages.length-1]={role:"user",content:content||"Analise os anexos enviados."};const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages,images})});const j=await r.json();if(!r.ok)throw Error(j.error||"A consulta não foi concluída.");c.messages.push({role:"assistant",content:j.reply||"Sem resposta do modelo.",time:new Date().toISOString()});save()}catch(err){c.messages.push({role:"assistant",content:"Não foi possível processar a mensagem: "+err.message,time:new Date().toISOString()});save()}finally{chatBusy=false;chat($("#content"))}}
 async function toggleMic(){if(recording){recording.stop();return}try{const stream=await navigator.mediaDevices.getUserMedia({audio:true});const chunks=[],rec=new MediaRecorder(stream);recording=rec;rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};rec.onstop=async()=>{stream.getTracks().forEach(t=>t.stop());recording=null;await attachments([new File(chunks,"gravacao.webm",{type:rec.mimeType||"audio/webm"})]);toast("Áudio preparado. Toque em enviar.")};rec.start();toast("Gravando... toque no microfone novamente para encerrar.")}catch(e){toast("Não foi possível acessar o microfone: "+e.message)}}
 function openDialog(html){document.querySelector(".modal-backdrop")?.remove();const el=document.createElement("div");el.className="modal-backdrop";el.innerHTML='<div class="modal" role="dialog" aria-modal="true">'+html+'</div>';document.body.append(el)}
-function formModal(type){dialog={type};let title,fields=[];if(type==="project"){title="Cadastrar área";fields=[["name","Nome da propriedade ou talhão","text"],["hectares","Área em hectares","number"],["crop","Cultura","text"],["city","Município / UF","text"]]}if(type==="quote"){title="Nova cotação";fields=[["item","Produto ou commodity","text"],["supplier","Fornecedor","text"],["price","Preço (R$)","number"],["unit","Unidade (ex.: saca, kg)","text"]]}if(type==="note"){title="Nova anotação";fields=[["title","Assunto","text"],["body","Descrição / observação","textarea"]]};openDialog('<h2>'+title+'</h2><p class="muted">Esses dados serão salvos neste navegador.</p><form id="crud-form">'+fields.map(([k,l,t])=>'<div class="field"><label for="crud-'+k+'">'+l+'</label><div class="field-inner">'+(t==="textarea"?'<textarea id="crud-'+k+'" required rows="4"></textarea>':'<input required id="crud-'+k+'" type="'+t+'" '+(t==="number"?'step="any" min="0"':"")+'></div></div>').join("")+'<div class="modal-actions"><button type="button" class="btn btn-light" data-action="close-modal">Cancelar</button><button class="btn" type="submit">Salvar</button></div></form>')}
+function formModal(type) {
+  dialog = {type};
+  const definitions = {
+    project: {
+      title: "Cadastrar área",
+      fields: [
+        ["name", "Nome da propriedade ou talhão", "text"],
+        ["hectares", "Área em hectares", "number"],
+        ["crop", "Cultura", "text"],
+        ["city", "Município / UF", "text"]
+      ]
+    },
+    quote: {
+      title: "Nova cotação",
+      fields: [
+        ["item", "Produto ou commodity", "text"],
+        ["supplier", "Fornecedor", "text"],
+        ["price", "Preço (R$)", "number"],
+        ["unit", "Unidade (ex.: saca, kg)", "text"]
+      ]
+    },
+    note: {
+      title: "Nova anotação",
+      fields: [
+        ["title", "Assunto", "text"],
+        ["body", "Descrição / observação", "textarea"]
+      ]
+    }
+  };
+  const cfg = definitions[type];
+  if (!cfg) return;
+  const rows = cfg.fields.map(([key, label, inputType]) => {
+    const id = "crud-" + key;
+    const control = inputType === "textarea"
+      ? '<textarea id="' + id + '" required rows="4"></textarea>'
+      : '<input id="' + id + '" required type="' + inputType + '"' +
+        (inputType === "number" ? ' step="any" min="0"' : "") + '>';
+    return '<div class="field"><label for="' + id + '">' + label +
+      '</label><div class="field-inner">' + control + '</div></div>';
+  }).join("");
+  openDialog('<h2>' + cfg.title + '</h2><p class="muted">Esses dados serão salvos neste navegador.</p>' +
+    '<form id="crud-form">' + rows +
+    '<div class="modal-actions"><button type="button" class="btn btn-light" data-action="close-modal">Cancelar</button>' +
+    '<button class="btn" type="submit">Salvar</button></div></form>');
+}
 function exportData(){const blob=new Blob([JSON.stringify({version:1,exported:new Date().toISOString(),...state},null,2)],{type:"application/json"});const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="agronexo-backup-"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(u)}
 async function importData(file){try{if(file.size>2e6)throw Error("Backup excede 2 MB.");const j=JSON.parse(await file.text());if(!Array.isArray(j.chats)||!Array.isArray(j.calcHistory)||!Array.isArray(j.projects)||!Array.isArray(j.quotes)||!Array.isArray(j.notes))throw Error("Formato de backup inválido.");state={...defaultState,...j};save();shell();toast("Dados importados com sucesso.")}catch(e){toast(e.message)}}
 document.addEventListener("click",async e=>{if(e.target.classList.contains("modal-backdrop")){$(".modal-backdrop")?.remove();return}const el=e.target.closest("[data-nav],[data-calc],[data-group],[data-action],[data-chat],[data-prompt],[data-remove]");if(!el)return;if(el.dataset.nav){navigate(el.dataset.nav);return}if(el.dataset.calc){selectedCalc=Number(el.dataset.calc);calcValues={};calcDetail($("#content"));return}if(el.dataset.group){group=el.dataset.group;calculators($("#content"));return}if(el.dataset.chat){state.selectedChat=el.dataset.chat;save();chat($("#content"));return}if(el.dataset.prompt){$("#chat-text").value=el.dataset.prompt;sendChat();return}if(el.dataset.remove){const collection=el.dataset.remove;state[collection]=state[collection].filter(x=>x.id!==el.dataset.id);save();renderContent();toast("Registro excluído.");return}const action=el.dataset.action;if(action==="menu"){$("#side")?.classList.toggle("open")}if(action==="back-calcs"){selectedCalc=1;calculators($("#content"))}if(action==="calc-reset"){calcValues={};calcDetail($("#content"))}if(action==="calc-save"){const c=CALCS.find(x=>x.id===Number(selectedCalc));const v={};c.fields.forEach(f=>v[f.key]=calcValues[f.key]??f.value);const r=runCalc(c,v);if(r.error){toast(r.error);return}state.calcHistory.unshift({id:uid(),calcId:c.id,name:c.title,values:v,result:num(r.value),unit:r.unit,time:new Date().toISOString()});state.calcHistory=state.calcHistory.slice(0,100);save();toast("Cálculo adicionado ao histórico.")}if(action==="calc-history")calcHistoryModal();if(action==="close-modal"){$(".modal-backdrop")?.remove();dialog=null}if(action==="bulario-reload")fetchBulario();if(action==="project-new")formModal("project");if(action==="quote-new")formModal("quote");if(action==="note-new")formModal("note");if(action==="new-chat"){state.selectedChat=null;activeChat();chat($("#content"))}if(action==="delete-chat"){state.chats=state.chats.filter(c=>c.id!==state.selectedChat);state.selectedChat=null;save();chat($("#content"))}if(action==="send-chat")sendChat();if(action==="attach")$("#chat-file")?.click();if(action==="mic")toggleMic();if(action==="export")exportData();if(action==="import")$("#import-file")?.click()});
