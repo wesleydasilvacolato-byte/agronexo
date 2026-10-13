@@ -1,37 +1,43 @@
-# AGRONEXO — publicação e operação
+# AGRONEXO — implantação com Google Gemini
 
-## Estrutura
-- `index.html`, `style.css`, `src/app.js`: frontend estático e responsivo.
-- `src/calculators.js`: 49 calculadoras, com fórmulas, unidades e notas técnicas.
-- `api/bulario.js`: busca servidor-side em CSV público AGROFIT/MAPA (sem API key).
-- `api/chat.js`: OpenAI Responses API, texto e interpretação de imagens/quadros de vídeo.
-- `api/transcribe.js`: conversão de áudio para texto pela OpenAI.
-- `api/status.js`: diagnóstico de configuração.
+## Arquitetura
+- Front-end estático em `index.html`, `style.css` e `src/app.js` (dashboard e chat).
+- 49 calculadoras com fórmulas e orientações em `src/calculators.js`.
+- `lib/gemini.js`: gateway seguro para a API Gemini, sem chave no navegador, validação de arquivos e limitação básica por IP.
+- `api/chat.js`: chat contextual multimodal (texto, OCR por modelo visual, imagens e vídeos curtos).
+- `api/transcribe.js`: transcrição de áudio (WebM, MP3, WAV etc.) via Gemini.
+- `api/status.js`: status não sensível da integração, indicando apenas se a chave está configurada.
+- `api/bulario.js`: consulta ao CSV público AGROFIT/MAPA, independente da IA.
 
-## Publicação
-1. Importe este repositório na Vercel, com Framework Preset: Other, diretório raiz, sem comando de build.
-2. Configure `OPENAI_API_KEY` em Project > Settings > Environment Variables. Opcional: `OPENAI_MODEL=gpt-4.1-mini`.
-3. Reimplante para ativar as variáveis.
-4. Confira `/api/status` e o chat Sebastião.
+## Configuração da API Gemini
+1. Consulte os [termos do Gemini](https://ai.google.dev/gemini-api/terms). **A API e o AI Studio exigem 18 anos ou mais** para uso e restringem apps voltados a menores ou provavelmente acessados por eles. Uso por pessoa inelegível não deve ser contornado por credencial de outra pessoa.
+2. Se e somente se o operador e o público atenderem aos termos, um responsável elegível pode acessar [Google AI Studio - API Keys](https://aistudio.google.com/app/apikey), selecionar o projeto Google Cloud apropriado e criar uma chave da API, verificando o free tier disponível.
+3. Na Vercel, projeto `agronexo` → Settings → Environment Variables, adicione `GEMINI_API_KEY` com o valor da chave, como tipo sensível para Production. Opcional: `GEMINI_MODEL=gemini-2.5-flash`.
+4. Reimplante o ambiente Production para injetar a nova variável. Verifique `/api/status`: `provider: gemini` e `assistantConfigured: true`.
+5. Faça testes com perguntas técnicas, foto, áudio WebM e vídeo curto. `/api/status` não valida cobrança, validade ou permissão da chave.
 
-## Bulário
-Dados abertos do Ministério da Agricultura e Pecuária (AGROFIT, produto formulado):
-https://dados.agricultura.gov.br/dataset/sistema-de-agrotoxicos-fitossanitarios-agrofit
-Licença informada na fonte: CC BY. O servidor faz download temporário e busca no CSV, armazenando cache em memória por até seis horas quando possível. Não é cópia integral do site Embrapa, nem substitui rótulo, bula e registro atualizados.
+## Gratuidade e segurança
+- A modalidade gratuita do Gemini é limitada por projeto e modelo. Verifique RPM, TPM e RPD no [AI Studio](https://aistudio.google.com) e preços em https://ai.google.dev/gemini-api/docs/pricing . **Não é ilimitada**.
+- A camada gratuita pode ser utilizada pelo fornecedor para melhoria de produtos, conforme seus termos. Não envie dados pessoais sensíveis ou informações de clientes sem política apropriada e autorização.
+- O proxy aplica limitação simplificada por IP em memória (não persistente). **Para acesso público é necessário login, proteção antifraude e rate limiting em armazenamento compartilhado**; caso contrário, terceiros podem esgotar a cota.
+- Uma chave `OPENAI_API_KEY` antiga é ignorada por esta versão. Se desejar, revogue-a no provedor original e remova a variável obsoleta da Vercel por segurança.
 
-## Persistência
-Nesta primeira implementação, chats, propriedades, cotações e anotações são mantidos em localStorage no navegador e podem ser exportados/importados nas Configurações. Para produção com múltiplos usuários é necessário autenticação (Supabase Auth, por exemplo), banco PostgreSQL com políticas RLS, backups, permissões e consentimento para dados.
+## Multimídia e limites
+- Imagens são redimensionadas no navegador e enviadas por HTTPS ao servidor, que consulta o Gemini sem expor a chave.
+- Áudios são transcritos em uma chamada, e a transcrição é salva junto à mensagem; depois o chat recebe a transcrição e produz a resposta. Isso consome **duas chamadas** Gemini por mensagem de áudio.
+- Vídeo até cerca de 2,2 MB em formato MP4/WebM é passado diretamente ao Gemini. Arquivos maiores são representados por três quadros JPEG; nesse modo o **áudio e partes do vídeo não são analisados**.
+- Requisições Vercel Functions têm limite de corpo de aproximadamente 4,5 MB. Mídia e histórico podem precisar de solução de upload externo para volumes maiores.
 
-## Limites
-- Necessária chave **paga por uso** da API OpenAI. Assinatura ChatGPT não é token de API.
-- Análise de vídeo por amostragem de 3 frames; sem reconhecimento contínuo nem transcrição da trilha sonora do vídeo.
-- Calculadoras 18, 20, 23, 26 e 27, entre outras, requerem tabelas/coefs regionais fornecidos pelo usuário; **não geram recomendação agronômica validada**.
-- Tratamento de pragas, doses e registro: conferir bulas oficiais, responsável técnico e conformidade legal.
-- Não usar chave de API dentro do frontend ou em commits.
+## Histórico
+- Conversas, transcrições, cálculos, áreas e cotações permanecem no `localStorage` do navegador (exportação JSON pela tela Configurações). Não há sincronização entre aparelhos, login, backups gerenciados nem histórico de anexos binários.
+- Antes de disponibilizar a plataforma ao público, é necessário banco PostgreSQL com autenticação, políticas de acesso, backups, moderação, proteção contra abuso e política de privacidade.
 
-## Testes sugeridos
-- Navegar em todas as oito seções no celular e computador.
-- Calcular uma ferramenta de cada grupo e salvar o histórico.
-- Criar/editar dados locais e fazer exportação/importação.
-- Consultar bulário com produto efetivamente constante no CSV do MAPA.
-- Configurar OPENAI_API_KEY e enviar texto, foto, nota de áudio e vídeo curto ao Sebastião.
+## Fonte agrícola
+- Dados públicos AGROFIT/MAPA: https://dados.agricultura.gov.br/dataset/sistema-de-agrotoxicos-fitossanitarios-agrofit . Verifique a vigência de registro, cultura autorizada e bula antes de qualquer aplicação. Sebastião não substitui agrônomo ou responsável técnico.
+
+## Validação mínima
+1. Na Vercel, confirme deployment `READY` e funcionamento de `/api/status`.
+2. Carregue página principal e visite todos os módulos.
+3. Em Calculadoras, faça um teste de cada um dos 11 grupos.
+4. Sem chave configurada, o chat deve mostrar erro de configuração claro, nunca travar.
+5. Com credencial **válida e utilização permitida pelos termos**, verificar separadamente texto, imagem, áudio e vídeo pequeno.
