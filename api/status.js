@@ -1,0 +1,1 @@
+export default function handler(req,res){res.setHeader("Cache-Control","no-store");return res.status(200).json({app:"AGRONEXO",assistantConfigured:Boolean(process.env.OPENAI_API_KEY),bulario:"AGROFIT/MAPA via CSV público",chatStorage:"localStorage (navegador)",version:"1.0.0-beta"})}
