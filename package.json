@@ -1,0 +1,13 @@
+{
+  "name": "agronexo",
+  "version": "1.0.0-beta",
+  "private": true,
+  "type": "module",
+  "description": "Plataforma de apoio agronômico",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "vercel dev"
+  }
+}
