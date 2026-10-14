@@ -45,3 +45,10 @@ O navegador utiliza o mesmo conjunto de identidade no dashboard, chat, calculado
 
 ### Consulta complementar de bulas na Embrapa
 Ao abrir as informações de um produto, a opção **Procurar ficha na Embrapa** verifica, em tempo real, se existe uma página pública correspondente no [ATER+ Digital / Controle de Pragas](https://www.atermaisdigital.cnptia.embrapa.br/web/controle-de-pragas). O sistema só mostra o link quando o endereço e o nome do produto forem confirmados. Uma página pode listar documentos de tipo **Bula**, mas não é garantia de PDF para todos os produtos. Para decisões técnicas, prevalece a bula vigente e o registro MAPA.
+
+## Correção do bulário — índice AGROFIT (outubro de 2026)
+O endpoint `/api/bulario?q=glifosato` agora pesquisa **um índice compactado produzido na implantação**. O processo de build `scripts/build-agrofit.mjs` descarrega uma única vez o CSV público completo do MAPA, extrai os campos cadastrais, remove duplicações, organiza partições por prefixo e gera arquivos gzip utilizados pela API. A compilação **falha** se o índice não contiver dados oficiais verificáveis (incluindo um registro com ingrediente ativo glifosato). Isso substitui a tentativa anterior de baixar mais de 175 MB a cada pesquisa.
+
+O índice é um retrato do AGROFIT na data de publicação, **não uma atualização em tempo real**. Para atualizar diariamente, será preciso automatizar nova compilação/publicação. O dataset de produtos formulados não inclui necessariamente um PDF oficial de bula para cada produto: o AGRONEXO fornece o registro e acesso ao portal do MAPA e, quando confirmada, a ficha pública da Embrapa.
+
+Diagnóstico simples: `/api/bulario?status=1` (informará a data de construção, quantidade de registros e situação do índice). Não expõe credenciais.
