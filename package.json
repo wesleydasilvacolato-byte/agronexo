@@ -1,6 +1,6 @@
 {
   "name": "agronexo",
-  "version": "1.4.0-beta",
+  "version": "1.5.0-beta",
   "private": true,
   "type": "module",
   "description": "Plataforma de apoio agronômico",
@@ -10,7 +10,7 @@
   "scripts": {
     "start": "vercel dev",
     "build": "npm test && node scripts/build-agrofit.mjs && npm run test:index",
-    "test": "node --test tests/calculators.test.mjs tests/frontend-smoke.test.mjs",
+    "test": "node --test tests/calculators.test.mjs tests/frontend-smoke.test.mjs tests/security.test.mjs tests/mobile.test.mjs",
     "test:index": "node --test tests/agrofit-index.test.mjs"
   }
 }
