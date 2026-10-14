@@ -21,3 +21,16 @@ A modalidade gratuita do Gemini não oferece capacidade ilimitada; limites do Go
 
 ### Compatibilidade de modelos (outubro/2026)
 O Sebastião prioriza `gemini-3.5-flash-lite`, pois o Google limitou o Gemini 2.5 para novos projetos. Em resposta 404 pode tentar `gemini-3.1-flash-lite`. Não faz alternância para contornar erros de cota, chave ou políticas.
+
+## Identidade visual da plataforma
+
+Identidade oficial aplicada em todas as seções com base no **Agronexo_Identidade_Visual.pdf** e **Sebastiao_Agronexo_Apresentacao-1.pdf** fornecidos pelo responsável pela marca.
+
+- Logotipo institucional: emblema Agronexo original, sem redesenho nem alteração de proporções.
+- Símbolo compacto: ícone original para identificação de app e cabeçalho.
+- Mascote Sebastião: imagens originais do manual, avatar no chat e no menu lateral e pose de corpo inteiro na tela inicial.
+- Paleta obrigatória: **#006B3F** (Agronexo), **#123C2B** (profundo), **#A6CE39** (lima), **#D8E8CC** (sálvia), **#F5F7F0** (marfim) e branco.
+- Montserrat para títulos, botões, navegação e conteúdo. O nome dentro do logotipo é arte original e **não é redigitado**.
+- Os arquivos de identidade foram extraídos diretamente dos documentos de marca, otimizados como WebP sem redistensão e incluídos em `src/brand-assets.js`. Não contêm chaves de API.
+
+O navegador utiliza o mesmo conjunto de identidade no dashboard, chat, calculadoras, bulário, projetos, cotações, caderno de campo, configurações, menu e favicon.
