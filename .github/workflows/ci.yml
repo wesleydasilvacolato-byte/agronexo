@@ -1,0 +1,28 @@
+name: AGRONEXO · Testes e build
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Instalar dependências
+        run: npm install --no-audit --no-fund
+      - name: Testar calculadoras e interface
+        run: npm test
+      - name: Testar segurança e mobilidade
+        run: npm run test:security
+      - name: Gerar índice MAPA e saída PWA
+        run: node scripts/build-agrofit.mjs
+      - name: Testar pesquisa AGROFIT real
+        run: npm run test:index
