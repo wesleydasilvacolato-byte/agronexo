@@ -44,3 +44,10 @@
 
 ## Correção 404 em projetos novos (outubro/2026)
 A documentação do Google restringe modelos 2.5 a projetos previamente ativos. O padrão agora é `gemini-3.5-flash-lite`; se esse modelo retornar 404, o gateway tenta `gemini-3.1-flash-lite`. Em erros de autenticação, cota ou segurança não há alternância de modelo. Uma variável GEMINI_MODEL definida explicitamente tem prioridade, mas 404 pode ativar os dois modelos gratuitos de contingência. Consulte https://ai.google.dev/gemini-api/docs/models/gemini-2.5-flash e https://ai.google.dev/gemini-api/docs/pricing .
+
+## Bulário e correções de rolagem (v1.2)
+- A API /api/bulario consulta o DataStore CKAN do MAPA; se não disponível, lê o CSV oficial incrementalmente com limitação de tempo e tamanho. Não solicita token.
+- Para testar, pesquise ingrediente ativo 'glifosato' ou 'atrazina' (somente quando a base oficial estiver acessível); confirme que os registros retornados mostram a fonte. Testes simulados não substituem essa verificação externa.
+- Bulas individuais: o dataset de cadastro não garante documentos PDF. A interface leva à Consulta Aberta AGROFIT e só mostra documento direto quando a própria fonte registrar um endereço oficial verificável.
+- Teste o chat em telas de 360px, 768px, 1024px e desktop, com resposta muito longa, teclado aberto e histórico; a região de mensagens é o elemento rolável e o compositor permanece visível.
+- Vercel pode impedir o acesso da integração automatizada a endpoints protegidos. Verifique chamadas reais pelo browser com acesso ao projeto.
