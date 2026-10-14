@@ -3,7 +3,7 @@
  * Does not require a paid/private API key. Never generates fake records.
  * Source: https://dados.agricultura.gov.br/dataset/sistema-de-agrotoxicos-fitossanitarios-agrofit
  */
-import {mkdir,writeFile,readdir,rm} from "node:fs/promises";
+import {mkdir,writeFile,readdir,rm,copyFile} from "node:fs/promises";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
 import {gzipSync} from "node:zlib";
@@ -119,8 +119,23 @@ async function build(){
  for(const name of await readdir(output))if(name.endsWith(".json.gz")&&!names.has(name))await rm(path.join(output,name));
  console.log("[agrofit] index ready",JSON.stringify(manifest));
 }
+// Vercel "Other" framework uses public/ as the static output after a build.
+const projectRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
+const publicRoot=path.join(projectRoot,"public");
+async function prepareStatic(){
+ await mkdir(path.join(publicRoot,"src"),{recursive:true});
+ for(const [from,to] of [
+  ["index.html","index.html"],
+  ["style.css","style.css"],
+  ["src/app.js","src/app.js"],
+  ["src/calculators.js","src/calculators.js"],
+  ["src/brand-assets.js","src/brand-assets.js"]
+ ])await copyFile(path.join(projectRoot,from),path.join(publicRoot,to));
+ console.log("[agrofit] interface copiada para public/");
+}
+await prepareStatic();
 try{await build()}catch(err){
  console.error("[agrofit] index build failed:",err?.message||err);
- // Never silently publish an empty fake index: the API uses explicit unavailable status.
+ // Never silently publish a fake index. The API uses explicit unavailable status.
  process.exitCode=0;
 }
