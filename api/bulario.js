@@ -85,10 +85,10 @@ async function csvStreamSearch(query){
   };
   // Delimitador detectado na primeira linha. Máquina de estados suporta
   // aspas, vírgulas, ponto-e-vírgula e quebras de linha dentro de campos.
-  let prevCR=false;
+  let prevCR=false,pendingQuote=false;
   const accept=s=>{
    for(let i=0;i<s.length;i++){
-     let ch=s[i];
+     const ch=s[i];
      if(prevCR){prevCR=false;if(ch==="\n")continue}
      if(firstRow&&sep===null&&ch==="\n"){
        const top=cell.replace(/^\uFEFF/,"");
@@ -99,11 +99,17 @@ async function csvStreamSearch(query){
        firstRow=false;continue;
      }
      if(firstRow&&sep===null){cell+=ch;continue}
-     if(ch==='"'){
-       if(inQuotes&&s[i+1]==='"'){cell+='"';i++}
-       else inQuotes=!inQuotes;
-     }else if(ch===sep&&!inQuotes){row.push(cell);cell=""}
-     else if((ch==="\n"||ch==="\r")&&!inQuotes){completeRow();if(ch==="\r")prevCR=true}
+     if(inQuotes){
+       if(pendingQuote){
+         pendingQuote=false;
+         if(ch==='"'){cell+='"';continue}
+         inQuotes=false; // aspas de fechamento, processar o caractere seguinte
+       }else if(ch==='"'){pendingQuote=true;continue}
+       else{cell+=ch;continue}
+     }
+     if(ch==='"'){inQuotes=true}
+     else if(ch===sep){row.push(cell);cell=""}
+     else if(ch==="\n"||ch==="\r"){completeRow();if(ch==="\r")prevCR=true}
      else cell+=ch;
      if(cell.length>500000)throw Error("Campo CSV excedeu o limite de processamento.");
    }
