@@ -1,3 +1,4 @@
+import {rateGuard} from "../lib/security.js";
 /**
  * Searches build-time compact AGROFIT/MAPA index. No 175MB downloads per query.
  * Source attribution: https://dados.agricultura.gov.br/dataset/sistema-de-agrotoxicos-fitossanitarios-agrofit
@@ -61,6 +62,7 @@ function search(q){
 export default async function handler(req,res){
  res.setHeader("Cache-Control","public, s-maxage=180, stale-while-revalidate=300");
  if(req.method!=="GET")return res.status(405).json({error:"Método não permitido."});
+ if(!await rateGuard(req,res,{namespace:"bulario",limit:70,windowSec:60}))return;
  const q=String(req.query?.q||"").trim().slice(0,120);
  const meta=getManifest();
  if(req.query?.status==="1")return res.status(meta?200:503).json({
