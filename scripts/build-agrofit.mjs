@@ -146,7 +146,7 @@ async function prepareStatic(){
   ["src/brand-assets.js","src/brand-assets.js"]
  ])await copyFile(path.join(projectRoot,from),path.join(publicRoot,to));
  const brandCode=await readFile(path.join(projectRoot,"src/brand-assets.js"),"utf8");
- const icon=brandCode.match(/icon:"data:image\\/webp;base64,([^"]+)"/);
+ const icon=brandCode.match(/icon:"data:image\/webp;base64,([^"]+)"/);
  if(!icon)throw Error("Ícone da identidade oficial Agronexo não encontrado.");
  const source=Buffer.from(icon[1],"base64");
  await mkdir(path.join(publicRoot,"icons"),{recursive:true});
