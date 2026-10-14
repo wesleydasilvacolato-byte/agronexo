@@ -34,3 +34,11 @@ Identidade oficial aplicada em todas as seções com base no **Agronexo_Identida
 - Os arquivos de identidade foram extraídos diretamente dos documentos de marca, otimizados como WebP sem redistensão e incluídos em `src/brand-assets.js`. Não contêm chaves de API.
 
 O navegador utiliza o mesmo conjunto de identidade no dashboard, chat, calculadoras, bulário, projetos, cotações, caderno de campo, configurações, menu e favicon.
+
+## Melhorias de usabilidade e bulário (v1.2)
+- Chat com altura baseada na viewport visual (barra do navegador/teclado), rolagem interna das mensagens, compositor acessível e histórico móvel.
+- Layouts com largura flexível, rolagem de tabelas e modais e cartões de resultado para os registros AGROFIT.
+- Bulário busca na base pública do MAPA, primeiro pelo índice DataStore/CKAN (quando habilitado), depois processando o CSV público em fluxo. Não é necessário token da Embrapa.
+- Pesquisa por ingrediente ativo, marca e registro; fichas de nome, concentração, classe, registro, titular e classificações quando presentes na fonte.
+- **Não afirmar que há bula completa para todos os registros:** o CSV não fornece necessariamente o PDF. Quando existe link oficial verificável, o programa pode mostrá-lo; nos demais casos, fornece acesso à [Consulta Aberta AGROFIT](https://agrofit.agricultura.gov.br/agrofit_cons/principal_agrofit_cons) para verificação da bula vigente.
+- A disponibilidade e a latência dependem da infraestrutura oficial. Se a base não responder, o sistema apresenta erro claro e oferece a consulta no MAPA, sem inventar registro ou dose.
