@@ -44,10 +44,10 @@ export default async function handler(req,res){
  const until=Date.parse(p.pin_blocked_until||0);
  if(until>Date.now())return res.status(429).json({error:"PIN bloqueado temporariamente. Tente novamente mais tarde.",retryAfter:Math.ceil((until-Date.now())/1000)});
  if(!matchPin(pin,p.pin_hash)){
-  const attempts=(p.pin_attempts||0)+1;
-  const blocked=attempts>=5?new Date(Date.now()+15*60000).toISOString():null;
-  await admin.from("agronexo_profiles").update({pin_attempts:attempts>=5?0:attempts,pin_blocked_until:blocked}).eq("id",p.id);
-  return res.status(401).json({error:blocked?"Muitas tentativas incorretas. PIN bloqueado por 15 minutos.":"PIN incorreto."});
+  const failed=await admin.rpc("agronexo_record_pin_failure",{p_user:p.id});
+  if(failed.error)return res.status(503).json({error:"Não foi possível verificar o PIN. Tente novamente."});
+  const blocked=failed.data&&Date.parse(failed.data)>Date.now();
+  return res.status(blocked?429:401).json({error:blocked?"Muitas tentativas incorretas. PIN bloqueado por 15 minutos.":"PIN incorreto."});
  }
  await admin.from("agronexo_profiles").update({pin_attempts:0,pin_blocked_until:null,last_seen_at:new Date().toISOString()}).eq("id",p.id);
  unlockCookie(res,p);return res.status(200).json({ok:true});
