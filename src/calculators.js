@@ -1,5 +1,5 @@
 // Catálogo de ferramentas. Valores padrão apenas para demonstração, não prescrição.
-const F=(key,label,unit,value,min=0)=>({key,label,unit,value,min});
+const F=(key,label,unit,value,min=0)=>({key,label,unit,value,min,max:unit==="%"?(key==="prnt"?200:100):null});
 const C=(id,title,group,unit,fields,compute,formula,note="Resultado estimativo. Confirme método, análise e orientação técnica para sua região.")=>({id,title,group,unit,fields,compute,formula,note});
 const div=(a,b)=>b>0?a/b:NaN;
 const scale=(v,p)=>v*p/100;
@@ -58,5 +58,32 @@ C(47,"Índice de Área Foliar","Hídrico","m²/m²",[F("folha","Área total de f
 C(48,"Necessidade hídrica (ETc)","Hídrico","mm/dia",[F("et0","Evapotranspiração de referência ET0","mm/dia",5),F("kc","Coeficiente de cultura Kc","adim.",1.1)],v=>v.et0*v.kc,"ETc = ET0 × Kc","ETc é demanda, não lâmina bruta de irrigação; considerar chuva efetiva, eficiência e solo."),
 C(49,"Exportação por cultura","Hídrico","kg nutriente/ha",[F("prod","Produtividade","t/ha",5),F("coef","Exportação do nutriente escolhido","kg/t",12)],v=>v.prod*v.coef,"Produtividade × coeficiente de exportação escolhido","Selecione coeficiente técnico específico da cultura, da parte colhida e do nutriente.")
 ];
-export function runCalc(calc,values){const v={};for(const f of calc.fields){const n=Number(values[f.key]);if(!Number.isFinite(n)||n<f.min)return {error:"Preencha um valor válido para "+f.label};v[f.key]=n;}if(Object.entries(v).some(([k,n])=>/^(prnt|germ|efic|teor|pur|agua|umid|alvo)$/.test(k)&&n>=100&&k!=="efic"&&k!=="teor")){ /* validação detalhada abaixo */ }if(v.agua>=100||v.umid>=100||v.prnt===0||v.germ===0||v.teor===0||v.pur===0||v.efic===0)return {error:"Verifique os percentuais: o divisor deve ser positivo."};const value=calc.compute(v);if(!Number.isFinite(value))return {error:"Não foi possível calcular. Confira os denominadores e as unidades."};return {value:Math.max(0,value),unit:calc.unit};}
-if(CALCS.length!==49)throw new Error("Catálogo incompleto: "+CALCS.length);
+export function runCalc(calc,values){
+ if(!calc||!Array.isArray(calc.fields))return {error:"Ferramenta inválida."};
+ const v={};
+ for(const f of calc.fields){
+  const raw=values?.[f.key];
+  if(raw===undefined||raw===null||String(raw).trim()==="")return {error:"Preencha o campo: "+f.label+"."};
+  const n=Number(raw);
+  if(!Number.isFinite(n)||n<f.min)return {error:"Valor inválido para "+f.label+". Use número maior ou igual a "+f.min+"."};
+  if(f.max!==null&&f.max!==undefined&&n>f.max)return {error:f.label+" deve ser no máximo "+f.max+" "+f.unit+"."};
+  v[f.key]=n;
+ }
+ // Parâmetros percentuais em denominadores: 0 e 100% podem tornar
+ // a estimativa impossível. Validação por módulo, não apenas nome de campo.
+ for(const field of calc.fields){
+  if(field.unit!=="%")continue;
+  const k=field.key,n=v[k];
+  if(["germ","efic","teor","prnt","pur"].includes(k)&&n===0)return {error:field.label+" precisa ser maior que zero."};
+  if(["agua","umid"].includes(k)&&n>=100)return {error:field.label+" deve ser menor que 100%."};
+  if(k==="alvo"&&calc.id===9&&n>=100)return {error:"A umidade-base deve ser inferior a 100%."};
+ }
+ if(calc.id===9&&v.alvo>=100)return {error:"Umidade-base inválida."};
+ if(calc.id===38&&v.n+v.p+v.k===0)return {error:"Informe ao menos um nutriente no formulado."};
+ if(calc.id===4&&v.total>0&&v.falhas+v.duplas>v.total)return {error:"Falhas + duplas excedem o número de posições avaliadas."};
+ try{
+  const value=calc.compute(v);
+  if(!Number.isFinite(value)||value<0)return {error:"Não foi possível calcular. Verifique denominadores, valores e unidades."};
+  return {value,unit:calc.unit};
+ }catch{return {error:"Erro no cálculo. Confira os valores utilizados."}}
+}
