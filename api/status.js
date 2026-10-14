@@ -6,6 +6,6 @@ export default function handler(req,res){
   bularioProvider:"MAPA/AGROFIT (índice compactado no build)",bulaPdf:"Apenas link oficial verificado no registro",audioTranscription:"Gemini multimodal",imageAnalysis:true,
   videoAnalysis:"Vídeo curto ou amostragem de quadros para vídeos grandes",
   chatStorage:"localStorage do navegador (sem sincronização)",
-  freeTier:"Cotas e disponibilidade determinadas pelo Google AI Studio",version:"1.3.0-beta"
+  freeTier:"Cotas e disponibilidade determinadas pelo Google AI Studio",version:"1.4.0-beta"
  })
 }
