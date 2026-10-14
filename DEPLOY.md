@@ -12,7 +12,7 @@
 ## Configuração da API Gemini
 1. Consulte os [termos do Gemini](https://ai.google.dev/gemini-api/terms). **A API e o AI Studio exigem 18 anos ou mais** para uso e restringem apps voltados a menores ou provavelmente acessados por eles. Uso por pessoa inelegível não deve ser contornado por credencial de outra pessoa.
 2. Se e somente se o operador e o público atenderem aos termos, um responsável elegível pode acessar [Google AI Studio - API Keys](https://aistudio.google.com/app/apikey), selecionar o projeto Google Cloud apropriado e criar uma chave da API, verificando o free tier disponível.
-3. Na Vercel, projeto `agronexo` → Settings → Environment Variables, adicione `GEMINI_API_KEY` com o valor da chave, como tipo sensível para Production. Opcional: `GEMINI_MODEL=gemini-2.5-flash`.
+3. Na Vercel, projeto `agronexo` → Settings → Environment Variables, adicione `GEMINI_API_KEY` com o valor da chave, como tipo sensível para Production. Opcional: `GEMINI_MODEL=gemini-3.5-flash-lite`.
 4. Reimplante o ambiente Production para injetar a nova variável. Verifique `/api/status`: `provider: gemini` e `assistantConfigured: true`.
 5. Faça testes com perguntas técnicas, foto, áudio WebM e vídeo curto. `/api/status` não valida cobrança, validade ou permissão da chave.
 
@@ -41,3 +41,6 @@
 3. Em Calculadoras, faça um teste de cada um dos 11 grupos.
 4. Sem chave configurada, o chat deve mostrar erro de configuração claro, nunca travar.
 5. Com credencial **válida e utilização permitida pelos termos**, verificar separadamente texto, imagem, áudio e vídeo pequeno.
+
+## Correção 404 em projetos novos (outubro/2026)
+A documentação do Google restringe modelos 2.5 a projetos previamente ativos. O padrão agora é `gemini-3.5-flash-lite`; se esse modelo retornar 404, o gateway tenta `gemini-3.1-flash-lite`. Em erros de autenticação, cota ou segurança não há alternância de modelo. Uma variável GEMINI_MODEL definida explicitamente tem prioridade, mas 404 pode ativar os dois modelos gratuitos de contingência. Consulte https://ai.google.dev/gemini-api/docs/models/gemini-2.5-flash e https://ai.google.dev/gemini-api/docs/pricing .
