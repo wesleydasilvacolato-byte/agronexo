@@ -51,3 +51,6 @@ A documentação do Google restringe modelos 2.5 a projetos previamente ativos. 
 - Bulas individuais: o dataset de cadastro não garante documentos PDF. A interface leva à Consulta Aberta AGROFIT e só mostra documento direto quando a própria fonte registrar um endereço oficial verificável.
 - Teste o chat em telas de 360px, 768px, 1024px e desktop, com resposta muito longa, teclado aberto e histórico; a região de mensagens é o elemento rolável e o compositor permanece visível.
 - Vercel pode impedir o acesso da integração automatizada a endpoints protegidos. Verifique chamadas reais pelo browser com acesso ao projeto.
+
+### API /api/bula
+Consulta complementar por nome comercial, com normalização do slug, validação de domínio e título. Não explora/copia PDFs em massa nem constrói links não confirmados. Teste com um nome comercial efetivamente presente no portal ATER+ Digital da Embrapa. Se a Embrapa estiver indisponível, a interface indica a consulta AGROFIT como alternativa.
