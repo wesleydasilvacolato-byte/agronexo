@@ -1,4 +1,5 @@
-import {MODEL,hasKey,generate,decodeDataUrl,handleError,limit} from "../lib/gemini.js";
+import {hasKey,generate,decodeDataUrl,handleError} from "../lib/gemini.js";
+import {securePost,rateGuard} from "../lib/security.js";
 const SYSTEM=[
  "Você é Sebastião, assistente agronômico de IA da plataforma AGRONEXO. Responda em português brasileiro de maneira objetiva, acessível e profissional.",
  "Ajude agricultores, técnicos e estudantes a compreender solos, plantabilidade, irrigação, manejo, cálculos e observações de campo. Sempre informe as unidades e hipóteses relevantes.",
@@ -13,12 +14,12 @@ const SYSTEM=[
 ].join("\n");
 export default async function handler(req,res){
  res.setHeader("Cache-Control","no-store");
- if(req.method!=="POST")return res.status(405).json({error:"Método não permitido."});
+ if(!securePost(req,res,3_900_000))return;
  if(!hasKey())return res.status(503).json({error:"Sebastião está preparado para Gemini, mas falta GEMINI_API_KEY na Vercel. Crie uma chave no Google AI Studio e adicione em Environment Variables."});
- if(!limit(req,res,8,60000))return;
+ if(!await rateGuard(req,res,{namespace:"chat",limit:6,windowSec:60}))return;
  try{
   const {messages,images=[],videos=[]}=req.body||{};
-  if(!Array.isArray(messages)||messages.length<1||messages.length>30||!Array.isArray(images)||!Array.isArray(videos)||images.length>5||videos.length>1)return res.status(400).json({error:"Histórico ou anexos inválidos."});
+  if(!Array.isArray(messages)||messages.length<1||messages.length>20||!Array.isArray(images)||!Array.isArray(videos)||images.length>3||videos.length>1||messages.some(m=>!m||!["user","assistant"].includes(m.role)||typeof m.content!=="string"))return res.status(400).json({error:"Histórico ou anexos inválidos."});
   const history=messages.slice(-16).map(m=>({role:m?.role==="assistant"?"model":"user",parts:[{text:String(m?.content||"").slice(0,10000)}]}));
   if(history.reduce((sum,m)=>sum+m.parts[0].text.length,0)>36000)return res.status(413).json({error:"Histórico muito longo. Inicie outra conversa."});
   const last=history[history.length-1];
