@@ -18,3 +18,6 @@ Configure **GEMINI_API_KEY** (e opcionalmente **GEMINI_MODEL**) exclusivamente n
 A modalidade gratuita do Gemini não oferece capacidade ilimitada; limites do Google são por projeto/modelo. O histórico do chat nesta versão fica no **navegador**, sem sincronização entre dispositivos. Para uso público ou comercial, implemente autenticação, limitação persistente de consumo, políticas de privacidade e backups.
 
 > **Aviso agronômico:** informações e estimativas não substituem recomendações oficiais, rótulo/bula vigente, laboratório, engenheiro agrônomo ou responsável técnico habilitado.
+
+### Compatibilidade de modelos (outubro/2026)
+O Sebastião prioriza `gemini-3.5-flash-lite`, pois o Google limitou o Gemini 2.5 para novos projetos. Em resposta 404 pode tentar `gemini-3.1-flash-lite`. Não faz alternância para contornar erros de cota, chave ou políticas.
