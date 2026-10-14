@@ -52,3 +52,12 @@ O endpoint `/api/bulario?q=glifosato` agora pesquisa **um índice compactado pro
 O índice é um retrato do AGROFIT na data de publicação, **não uma atualização em tempo real**. Para atualizar diariamente, será preciso automatizar nova compilação/publicação. O dataset de produtos formulados não inclui necessariamente um PDF oficial de bula para cada produto: o AGRONEXO fornece o registro e acesso ao portal do MAPA e, quando confirmada, a ficha pública da Embrapa.
 
 Diagnóstico simples: `/api/bulario?status=1` (informará a data de construção, quantidade de registros e situação do índice). Não expõe credenciais.
+
+## Auditoria e regressão — versão 1.4
+- 49 calculadoras mantidas, agora com validação de campos vazios, divisores e percentuais fora do limite. Cada fórmula tem validação de finitude; os testes automatizados verificam os 49 exemplos e vários casos físicos.
+- Corrigido risco de resposta atrasada do Sebastião substituir outra seção do aplicativo.
+- Pesquisa de ingredientes ativos com pontuação, como `2,4-D`, tratada com normalização compatível com as partições do índice.
+- Backups são normalizados antes de restaurar e excluões têm confirmação, preservando os dados existentes no navegador.
+- Pipeline `npm run build`: testes de unidade, criação de índice oficial e smoke test real da API contra o índice publicado. Uma falha interrompe a publicação.
+
+**Pendências para produção pública:** autenticação individual, banco persistente com sincronização, controle compartilhado de limites de API, observabilidade, auditoria técnico-agronômica das fórmulas e verificação real dos serviços externos. Um build READY comprova a construção, não valida por si só o navegador do usuário nem chamadas ao Gemini.
