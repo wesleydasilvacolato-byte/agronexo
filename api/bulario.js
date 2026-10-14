@@ -87,3 +87,6 @@ export default async function handler(req,res){
    code:"INDEX_READ_FAILURE",fonte:SOURCE,consultaOficial:CONSULTA});
  }
 }
+
+// Exportações somente de funções internas para CI, sem contornar autenticação HTTP.
+export {getManifest,search};
