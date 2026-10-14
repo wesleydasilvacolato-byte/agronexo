@@ -103,3 +103,13 @@ button,input,select,textarea{font-family:"Montserrat",Arial,sans-serif}
  .chat-welcome .seb-avatar{width:86px;height:86px}
  .pagehead h1{font-size:25px}
 }
+
+/* Animação neutra da inicialização; evita imitar o emblema oficial */
+.load-orbit{width:49px;height:49px;border-radius:50%;border:5px solid var(--ag-sage);border-top-color:var(--ag-lime);animation:ag-spin .85s linear infinite}
+@keyframes ag-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.load-orbit{animation:none}}
+/* Amplia a proteção visual para documentos e formulários */
+.notice a{color:var(--ag-green);font-weight:700}
+.search:focus-within,.field-inner:focus-within{border-color:var(--ag-green);box-shadow:0 0 0 2px #a6ce3933}
+.topbar .top-brand-icon{background:transparent}
+@media(max-width:400px){.hero h1{font-size:22px}.hero p{font-size:10px}.hero-visual{height:185px;width:81px}}
