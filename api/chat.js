@@ -1,5 +1,6 @@
 import {hasKey,generate,decodeDataUrl,handleError} from "../lib/gemini.js";
 import {securePost,rateGuard} from "../lib/security.js";
+import {identify} from "../lib/auth.js";
 const SYSTEM=[
  "Você é Sebastião, assistente agronômico de IA da plataforma AGRONEXO. Responda em português brasileiro de maneira objetiva, acessível e profissional.",
  "Ajude agricultores, técnicos e estudantes a compreender solos, plantabilidade, irrigação, manejo, cálculos e observações de campo. Sempre informe as unidades e hipóteses relevantes.",
@@ -13,6 +14,7 @@ const SYSTEM=[
  "Se não souber, declare incerteza. Mantenha respostas claras, estruturadas e úteis para o campo."
 ].join("\n");
 export default async function handler(req,res){
+ const auth=await identify(req,res);if(!auth)return;
  res.setHeader("Cache-Control","no-store");
  if(!securePost(req,res,3_900_000))return;
  if(!hasKey())return res.status(503).json({error:"Sebastião está preparado para Gemini, mas falta GEMINI_API_KEY na Vercel. Crie uma chave no Google AI Studio e adicione em Environment Variables."});
