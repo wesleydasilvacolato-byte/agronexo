@@ -42,3 +42,6 @@ O navegador utiliza o mesmo conjunto de identidade no dashboard, chat, calculado
 - Pesquisa por ingrediente ativo, marca e registro; fichas de nome, concentração, classe, registro, titular e classificações quando presentes na fonte.
 - **Não afirmar que há bula completa para todos os registros:** o CSV não fornece necessariamente o PDF. Quando existe link oficial verificável, o programa pode mostrá-lo; nos demais casos, fornece acesso à [Consulta Aberta AGROFIT](https://agrofit.agricultura.gov.br/agrofit_cons/principal_agrofit_cons) para verificação da bula vigente.
 - A disponibilidade e a latência dependem da infraestrutura oficial. Se a base não responder, o sistema apresenta erro claro e oferece a consulta no MAPA, sem inventar registro ou dose.
+
+### Consulta complementar de bulas na Embrapa
+Ao abrir as informações de um produto, a opção **Procurar ficha na Embrapa** verifica, em tempo real, se existe uma página pública correspondente no [ATER+ Digital / Controle de Pragas](https://www.atermaisdigital.cnptia.embrapa.br/web/controle-de-pragas). O sistema só mostra o link quando o endereço e o nome do produto forem confirmados. Uma página pode listar documentos de tipo **Bula**, mas não é garantia de PDF para todos os produtos. Para decisões técnicas, prevalece a bula vigente e o registro MAPA.
