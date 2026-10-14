@@ -89,5 +89,9 @@ document.addEventListener("click",async e=>{
  }
 });
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installEvent=e});
+window.AGRONEXO_INSTALL=async()=>{
+ if(installEvent){installEvent.prompt();await installEvent.userChoice;installEvent=null}
+ else alert("Android/Chrome: menu ⋮ → Instalar aplicativo. iPhone/iPad: Compartilhar → Adicionar à Tela de Início.");
+};
 if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{});
 await boot();
