@@ -67,3 +67,23 @@ Consulta complementar por nome comercial, com normalização do slug, validaçã
 `npm test` executa os testes de 49 calculadoras, limites numéricos e navegação básica com DOM simulado.
 `npm run build` primeiro roda testes, depois obtém e valida os dados oficiais do MAPA, e finalmente executa `npm run test:index` para verificar uma pesquisa real por glifosato e que não existem resultados fictícios em nomes inexistentes.
 Os testes com DOM simulado **não** substituem validação manual de responsividade e toque em Chrome/Android, Safari/iOS e desktop. Da mesma forma, testar o código do Gemini não representa resposta efetiva do serviço remoto.
+
+## Segurança e experiência mobile-first — v1.5 (outubro de 2026)
+
+**Implementado nesta versão:**
+- Navegação inferior com cinco ações em celular/tablet, menu lateral com sombra e botão de fechar, uso de safe area, teclado virtual, alvos de toque de 44 px, rolagem independente do chat, formulários maiores e cartões responsivos.
+- Políticas de navegador via headers (Content-Security-Policy, HSTS, anti-framing, Permissions-Policy e proteção MIME).
+- Endpoints Gemini com POST JSON e limite de tamanho, validação de origem no navegador e rejeição de chamadas cross-site. Não confundir verificação de origem com autenticação: clientes externos podem forjar cabeçalhos.
+- Limitação de requisições por IP: memória por instância na fase beta. Opcionalmente, `UPSTASH_REDIS_REST_URL` e `UPSTASH_REDIS_REST_TOKEN` habilitam limitação distribuída; se o Redis configurado falhar, a API retorna 503 e não consome IA.
+- Validação mais estrita de histórico, imagens, áudios e vídeo para reduzir abuso da cota Gemini.
+- Limpeza consciente dos dados do dispositivo na página Configurações, com confirmação explícita.
+- Testes de segurança e regressão móvel integrados ao build da Vercel.
+
+**Ainda não pronto para abertura pública irrestrita:**
+1. **Autenticação** por usuário (recomendado Supabase Auth), proteção individual das rotas e recuperação de conta.
+2. **Banco de dados persistente** (Postgres com RLS), backups e controle de acesso para conversas, propriedades e anexos; o histórico atual continua local no navegador.
+3. **Rate limiting distribuído efetivo**: configurar Upstash Redis, validar limites por usuário autenticado e impor orçamento de IA.
+4. **Política de privacidade, transparência sobre uso do Gemini** e consentimento/condições legais dos serviços.
+5. **Teste manual em dispositivos físicos**, observabilidade, testes de penetração e validação agronômica da precisão das recomendações e fórmulas.
+
+A implantação de uma interface responsiva não torna a plataforma automaticamente segura para produção. Não publique o acesso a uma grande audiência sem concluir os itens acima.
