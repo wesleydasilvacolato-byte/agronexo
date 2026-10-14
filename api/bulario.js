@@ -40,7 +40,9 @@ function search(q){
  const clean=norm(q).trim();
  const tokens=clean.split(/\s+/).map(x=>x.replace(/[^a-z0-9]/g,"")).filter(Boolean);
  const first=tokens.find(x=>x.length>=2)||compact(q);
- const prefix=first.slice(0,2);
+ // Ativos com pontuação (ex.: 2,4-D) são indexados como "24d".
+ // Para buscas textuais normais, preserve o primeiro token significativo.
+ const prefix=(/[,.\/\-]/.test(q)&&compact(q).length>=2?compact(q):first).slice(0,2);
  if(prefix.length!==2)return {total:0,results:[]};
  const records=getShard(prefix);
  const found=records.filter(r=>{
@@ -63,7 +65,8 @@ export default async function handler(req,res){
  const meta=getManifest();
  if(req.query?.status==="1")return res.status(meta?200:503).json({
    indexed:Boolean(meta),builtAt:meta?.builtAt||null,
-   uniqueProducts:meta?.uniqueProducts||0,shards:meta?.shards||0,source:SOURCE,
+   uniqueProducts:meta?.uniqueProducts||0,shards:meta?.shards||0,
+   verifiedGlifosato:Boolean(meta?.verifiedGlifosato),source:SOURCE,
    error:meta?undefined:"O índice oficial do AGROFIT ainda não foi gerado na compilação da plataforma."
  });
  if(q.length<2)return res.status(400).json({error:"Digite pelo menos dois caracteres."});
