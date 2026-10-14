@@ -1,6 +1,6 @@
 {
   "name": "agronexo",
-  "version": "1.0.0-beta",
+  "version": "1.3.0-beta",
   "private": true,
   "type": "module",
   "description": "Plataforma de apoio agronômico",
@@ -8,6 +8,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "start": "vercel dev"
+    "start": "vercel dev",
+    "build": "node scripts/build-agrofit.mjs"
   }
 }
