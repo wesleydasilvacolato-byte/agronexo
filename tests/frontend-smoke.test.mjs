@@ -33,3 +33,23 @@ test("interface inicializa e navega por oito módulos sem travar",async()=>{
  assert.match(element("#content").innerHTML,/RESULTADO CALCULADO/);
  assert.match(element("#content").innerHTML,/calc-error/);
 });
+
+
+import {readFileSync} from "node:fs";
+import {securePost} from "../lib/security.js";
+test("mobile-first: menu inferior, safe-area e navegação adaptada",()=>{
+ const js=readFileSync(new URL("../src/app.js",import.meta.url),"utf8");
+ const css=readFileSync(new URL("../style.css",import.meta.url),"utf8");
+ assert.match(js,/class="bottom-nav"/);
+ assert.match(js,/data-action="close-menu"/);
+ assert.match(css,/safe-area-inset-bottom/);
+ assert.match(css,/keyboard-open/);
+ assert.match(css,/min-height:44px/);
+});
+test("API rejeita origem estranha e requisição excessiva",()=>{
+ const r={code:200,setHeader(){return this},status(n){this.code=n;return this},json(){return this}};
+ const req={method:"POST",headers:{"content-type":"application/json",host:"agronexo-colato1.vercel.app",origin:"https://outro-site.example"},body:{}};
+ assert.equal(securePost(req,r),false);assert.equal(r.code,403);
+ const big={...req,headers:{...req.headers,origin:"https://agronexo-colato1.vercel.app","content-length":"9000000"}};
+ assert.equal(securePost(big,r),false);assert.equal(r.code,413);
+});
