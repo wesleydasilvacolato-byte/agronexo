@@ -42,3 +42,28 @@ revoke all on public.agronexo_admin_audit from anon, authenticated;
 
 comment on table public.agronexo_profiles is 'Perfis de acesso fechado do Agronexo; criação só via admin';
 comment on table public.agronexo_admin_audit is 'Trilha de auditoria administrativa sem senhas ou PINs';
+
+
+-- Incremento atômico do número de tentativas; impede que chamadas concorrentes
+-- contornem o bloqueio de 5 tentativas.
+create or replace function public.agronexo_record_pin_failure(p_user uuid)
+returns timestamptz
+language plpgsql security definer set search_path = public
+as $$
+declare n integer; locked timestamptz;
+begin
+  select pin_attempts, pin_blocked_until into n,locked
+    from public.agronexo_profiles where id=p_user for update;
+  if not found then raise exception 'user not found'; end if;
+  if locked > now() then return locked; end if;
+  n := coalesce(n,0)+1;
+  if n >= 5 then
+    locked := now() + interval '15 minutes';
+    update public.agronexo_profiles set pin_attempts=0,pin_blocked_until=locked where id=p_user;
+    return locked;
+  end if;
+  update public.agronexo_profiles set pin_attempts=n,pin_blocked_until=null where id=p_user;
+  return null;
+end $$;
+revoke all on function public.agronexo_record_pin_failure(uuid) from public,anon,authenticated;
+grant execute on function public.agronexo_record_pin_failure(uuid) to service_role;
