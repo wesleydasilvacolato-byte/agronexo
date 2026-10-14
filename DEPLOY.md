@@ -54,3 +54,11 @@ A documentação do Google restringe modelos 2.5 a projetos previamente ativos. 
 
 ### API /api/bula
 Consulta complementar por nome comercial, com normalização do slug, validação de domínio e título. Não explora/copia PDFs em massa nem constrói links não confirmados. Teste com um nome comercial efetivamente presente no portal ATER+ Digital da Embrapa. Se a Embrapa estiver indisponível, a interface indica a consulta AGROFIT como alternativa.
+
+## Publicação do índice AGROFIT v1.3
+- Build: `npm run build` roda `scripts/build-agrofit.mjs` e prepara arquivos de interface em `public/`.
+- API: `/api/bulario?q=glifosato` lê apenas a partição gzip do índice. `vercel.json` inclui as partições geradas na função. Não há download de 175 MB por requisição.
+- Compilação protege produção: se a fonte MAPA estiver indisponível, se não houver registros suficientes ou se 'glifosato' estiver ausente, o build falhará e o deploy anterior permanecerá ativo.
+- Verifique `/api/bulario?status=1`: espera-se `indexed: true` e `uniqueProducts > 0`. Depois pesquise por 'glifosato' e 'atrazina'.
+- A fonte declara atualização diária; o índice da publicação só é atualizado na próxima construção. Automatizar rebuild diário quando o fluxo de CI/CD estiver conectado.
+- PDFs de bulas não estão integralmente incluídos no dataset público formulado. Não exibir links de PDF não verificados.
