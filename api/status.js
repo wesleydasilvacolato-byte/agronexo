@@ -6,6 +6,7 @@ export default function handler(req,res){
   bularioProvider:"MAPA/AGROFIT (índice compactado no build)",bulaPdf:"Apenas link oficial verificado no registro",audioTranscription:"Gemini multimodal",imageAnalysis:true,
   videoAnalysis:"Vídeo curto ou amostragem de quadros para vídeos grandes",
   chatStorage:"localStorage do navegador (sem sincronização)",
-  freeTier:"Cotas e disponibilidade determinadas pelo Google AI Studio",version:"1.4.0-beta"
+  productionAuthReady:false,sharedRateLimitConfigured:Boolean(process.env.UPSTASH_REDIS_REST_URL&&process.env.UPSTASH_REDIS_REST_TOKEN),
+  freeTier:"Cotas e disponibilidade determinadas pelo Google AI Studio",version:"1.5.0-beta"
  })
 }
