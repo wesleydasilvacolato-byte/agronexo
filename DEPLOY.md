@@ -62,3 +62,8 @@ Consulta complementar por nome comercial, com normalização do slug, validaçã
 - Verifique `/api/bulario?status=1`: espera-se `indexed: true` e `uniqueProducts > 0`. Depois pesquise por 'glifosato' e 'atrazina'.
 - A fonte declara atualização diária; o índice da publicação só é atualizado na próxima construção. Automatizar rebuild diário quando o fluxo de CI/CD estiver conectado.
 - PDFs de bulas não estão integralmente incluídos no dataset público formulado. Não exibir links de PDF não verificados.
+
+## Release v1.4: verificações automáticas
+`npm test` executa os testes de 49 calculadoras, limites numéricos e navegação básica com DOM simulado.
+`npm run build` primeiro roda testes, depois obtém e valida os dados oficiais do MAPA, e finalmente executa `npm run test:index` para verificar uma pesquisa real por glifosato e que não existem resultados fictícios em nomes inexistentes.
+Os testes com DOM simulado **não** substituem validação manual de responsividade e toque em Chrome/Android, Safari/iOS e desktop. Da mesma forma, testar o código do Gemini não representa resposta efetiva do serviço remoto.
