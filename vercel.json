@@ -36,8 +36,7 @@
         },
         {
           "key": "Cache-Control",
-          "value": "no-cache",
-          "source": null
+          "value": "no-cache"
         }
       ]
     }
