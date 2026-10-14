@@ -1,9 +1,10 @@
-import {hasKey,generate,decodeDataUrl,handleError,limit} from "../lib/gemini.js";
+import {hasKey,generate,decodeDataUrl,handleError} from "../lib/gemini.js";
+import {securePost,rateGuard} from "../lib/security.js";
 export default async function handler(req,res){
  res.setHeader("Cache-Control","no-store");
- if(req.method!=="POST")return res.status(405).json({error:"Método não permitido."});
+ if(!securePost(req,res,3_600_000))return;
  if(!hasKey())return res.status(503).json({error:"Configure GEMINI_API_KEY na Vercel para ativar transcrição de áudio."});
- if(!limit(req,res,5,60000))return;
+ if(!await rateGuard(req,res,{namespace:"transcribe",limit:4,windowSec:60}))return;
  try{
   const media=decodeDataUrl(req.body?.data,/^audio\/(webm|mpeg|mp3|mp4|ogg|wav|x-wav|m4a|aac|flac|opus|aiff)$/i,2500000);
   const result=await generate([{role:"user",parts:[
