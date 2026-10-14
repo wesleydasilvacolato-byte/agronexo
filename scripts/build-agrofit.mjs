@@ -107,6 +107,12 @@ async function build(){
    values.push(record);
   }
  }
+ // Verificação real do índice. Jamais aprovar uma compilação com dados
+ // aparentemente válidos mas incapazes de localizar o ativo principal.
+ const glyph=(groups.get("gl")||[]).some(r=>norm(r.ativo).includes("glifosato"));
+ const formatted=[...unique.values()].filter(r=>r.nome!=="Produto não identificado").length;
+ if(!glyph)throw Error("Índice sem o ingrediente ativo glifosato: conferir a coluna de ingrediente ativo do CSV oficial.");
+ if(formatted<100)throw Error("Poucos nomes comerciais identificados: "+formatted+"; revisar o esquema do CSV.");
  let outputBytes=0;
  const names=new Set();
  for(const [prefix,records] of groups){
@@ -114,7 +120,7 @@ async function build(){
   const buffer=gzipSync(Buffer.from(JSON.stringify(records)),{level:8});
   const name=prefix+".json.gz";await writeFile(path.join(output,name),buffer);names.add(name);outputBytes+=buffer.byteLength;
  }
- const manifest={version:1,source:URL_CSV,builtAt:new Date().toISOString(),uniqueProducts:unique.size,rows,downloadBytes:bytes,shards:names.size,indexBytes:outputBytes,kind:"MAPA/AGROFIT public products (not individual bulletins)"};
+ const manifest={version:1,source:URL_CSV,builtAt:new Date().toISOString(),uniqueProducts:unique.size,rows,downloadBytes:bytes,shards:names.size,indexBytes:outputBytes,verifiedGlifosato:glyph,kind:"MAPA/AGROFIT public products (not individual bulletins)"};
  await writeFile(path.join(output,"manifest.json"),JSON.stringify(manifest));
  for(const name of await readdir(output))if(name.endsWith(".json.gz")&&!names.has(name))await rm(path.join(output,name));
  console.log("[agrofit] index ready",JSON.stringify(manifest));
@@ -135,7 +141,7 @@ async function prepareStatic(){
 }
 await prepareStatic();
 try{await build()}catch(err){
- console.error("[agrofit] index build failed:",err?.message||err);
- // Never silently publish a fake index. The API uses explicit unavailable status.
- process.exitCode=0;
+ console.error("[agrofit] índice oficial não gerado:",err?.message||err);
+ // Não liberar produção com bulário vazio.
+ process.exitCode=1;
 }
