@@ -18,7 +18,7 @@ test("bloqueia payload grande, formato inválido e método diferente",()=>{
  ];
  for(const [q,status] of cases){const r=response();assert.equal(securePost(q,r),false);assert.equal(r.code,status)}
 });
-test("limite por IP em beta impede rajadas por minuto",async()=>{
+test("limite por IP em beta impede rajadas por minuto",{skip:Boolean(process.env.UPSTASH_REDIS_REST_URL&&process.env.UPSTASH_REDIS_REST_TOKEN)},async()=>{
  const q=req({"x-forwarded-for":"192.0.2.47"});const id="test-"+Date.now();
  for(let i=0;i<2;i++){const r=response();assert.equal(await rateGuard(q,r,{namespace:id,limit:2,windowSec:60}),true)}
  const r=response();assert.equal(await rateGuard(q,r,{namespace:id,limit:2,windowSec:60}),false);assert.equal(r.code,429);
