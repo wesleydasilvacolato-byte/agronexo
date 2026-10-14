@@ -1,6 +1,8 @@
 import {hasKey,generate,decodeDataUrl,handleError} from "../lib/gemini.js";
 import {securePost,rateGuard} from "../lib/security.js";
+import {identify} from "../lib/auth.js";
 export default async function handler(req,res){
+ const auth=await identify(req,res);if(!auth)return;
  res.setHeader("Cache-Control","no-store");
  if(!securePost(req,res,3_600_000))return;
  if(!hasKey())return res.status(503).json({error:"Configure GEMINI_API_KEY na Vercel para ativar transcrição de áudio."});
