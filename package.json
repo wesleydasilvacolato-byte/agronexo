@@ -10,9 +10,9 @@
   "scripts": {
     "start": "vercel dev",
     "build": "npm test && node scripts/build-agrofit.mjs && npm run test:index",
-    "test": "node --test tests/calculators.test.mjs tests/frontend-smoke.test.mjs",
+    "test": "node --test tests/calculators.test.mjs tests/frontend-smoke.test.mjs tests/auth-pwa.test.mjs",
     "test:index": "node --test tests/agrofit-index.test.mjs",
-    "test:security": "node --test tests/security.test.mjs tests/mobile.test.mjs",
+    "test:security": "node --test tests/security.test.mjs tests/mobile.test.mjs tests/auth-pwa.test.mjs",
     "bootstrap:admin": "node scripts/bootstrap-admin.mjs"
   },
   "dependencies": {
