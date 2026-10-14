@@ -172,3 +172,43 @@ html,body{min-width:280px;max-width:100%;min-height:100%;overflow-x:hidden}
  .composer{padding:8px}
  .composer-input{padding:5px;gap:5px}
 }
+
+
+/* Bulário: fichas responsivas sem tabelas que cortem botões em telas menores */
+.bulario-panel{padding:19px;min-width:0;max-width:100%}
+.bulario-panel .toolbar{display:flex;min-width:0;flex-wrap:wrap}
+.bulario-search{flex:1 1 300px;min-width:0}
+.bulario-examples{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:-4px 0 19px;font-size:11px;color:#728979}
+.bulario-examples .chip{padding:7px 11px}
+.bul-results-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin:16px 0 20px}
+.bul-results-head strong{font-size:15px;color:var(--ag-deep)}
+.bul-result-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;min-width:0}
+.bul-product{min-width:0;padding:19px;display:flex;flex-direction:column;gap:12px}
+.bul-product-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.bul-product h3{font-size:15px;font-weight:800;color:var(--ag-deep);overflow-wrap:anywhere;line-height:1.4}
+.bul-product p{font-size:12px;line-height:1.7;overflow-wrap:anywhere}
+.bul-active{color:#456451;flex:1}
+.bul-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;max-width:100%}
+.bul-actions .btn{white-space:normal;text-align:center;max-width:100%;min-height:38px}
+.bul-detail-row{display:grid;grid-template-columns:160px minmax(0,1fr);gap:12px;border-bottom:1px solid #e2eadf;padding:12px 0;font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+.bul-detail-row b{color:var(--ag-deep)}
+.bul-detail-row span{color:#516d5b}
+.bul-detail .notice{margin:17px 0}
+.chat-ident{flex:1;min-width:0}
+.chat-history-toggle{display:none;flex-shrink:0}
+.chat-frame{position:relative}
+@media(max-width:850px){
+ .bul-result-grid{grid-template-columns:1fr}
+ .chat-history-toggle{display:inline-flex;font-size:11px;padding:9px 11px}
+ .chat-frame.show-history .chat-rail{display:flex;position:absolute;top:0;bottom:0;left:0;z-index:15;width:min(295px,85%);box-shadow:10px 0 24px #123c2b22;border-right:1px solid #dce7d7}
+}
+@media(max-width:550px){
+ .bulario-panel{padding:12px}
+ .bulario-panel .toolbar{gap:8px}
+ .bulario-panel .toolbar .search{min-width:100%;flex:1 1 100%}
+ .bul-result-grid{gap:10px}
+ .bul-product{padding:15px}
+ .bul-results-head .btn{width:100%}
+ .bul-detail-row{grid-template-columns:1fr;gap:4px}
+ .chat-history-toggle{font-size:10px}
+}
