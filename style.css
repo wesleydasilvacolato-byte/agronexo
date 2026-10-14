@@ -212,3 +212,117 @@ html,body{min-width:280px;max-width:100%;min-height:100%;overflow-x:hidden}
  .bul-detail-row{grid-template-columns:1fr;gap:4px}
  .chat-history-toggle{font-size:10px}
 }
+
+
+/* AGRONEXO v1.5 · navegação mobile-first e ergonomia em tablet */
+:root{--bottom-height:calc(66px + env(safe-area-inset-bottom,0px))}
+.drawer-shade,.drawer-close,.bottom-nav{display:none}
+.calc-error{margin-top:8px;color:#ffdbb0;font-size:12px;font-weight:700;line-height:1.55}
+button,a,input,textarea,select{-webkit-tap-highlight-color:transparent}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
+ outline:3px solid var(--ag-lime);outline-offset:2px;
+}
+.content .card,.content .search,.content .field{min-width:0}
+.content{overflow-wrap:break-word}
+input,textarea,select{max-width:100%}
+button{touch-action:manipulation}
+.modal-backdrop{z-index:2100}
+.toast{z-index:2200}
+@media(max-width:850px){
+ html{scroll-padding-top:75px}
+ .shell{overflow:clip}
+ .main{padding-bottom:var(--bottom-height)}
+ .sidebar{
+  width:min(330px,88vw);z-index:1200;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));
+  box-shadow:14px 0 45px #071f1533;visibility:hidden;
+  transition:transform .2s ease,visibility .2s ease
+ }
+ .sidebar.open{visibility:visible}
+ .drawer-close{
+  display:grid;place-items:center;width:44px;height:44px;flex:0 0 auto;
+  border:1px solid #4c745d;background:#24553b;color:#fff;border-radius:12px;
+  font-size:24px;line-height:1
+ }
+ .brand{justify-content:space-between;gap:10px}
+ .brand-logo{max-width:174px}
+ .drawer-shade{
+  display:block;position:fixed;inset:0;opacity:0;pointer-events:none;
+  border:0;background:#091e1580;z-index:1190;transition:opacity .2s ease
+ }
+ .drawer-open .drawer-shade{opacity:1;pointer-events:auto}
+ .drawer-open{overflow:hidden}
+ .bottom-nav{
+  position:fixed;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:stretch;
+  bottom:0;left:0;right:0;height:var(--bottom-height);
+  padding:4px 4px env(safe-area-inset-bottom,0px);z-index:1000;
+  border-top:1px solid #d6e4d5;background:#fff;box-shadow:0 -8px 25px #123c2b0d;
+  backdrop-filter:blur(14px)
+ }
+ .bottom-nav button{
+  background:transparent;border:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3px;min-width:0;border-radius:12px;
+  color:#547464;font-size:10px;font-weight:750;min-height:48px
+ }
+ .bottom-nav button.active{color:#07582f;background:#e9f6da}
+ .bottom-icon{font-size:23px;line-height:1.05;font-family:Arial,sans-serif}
+ .bottom-nav button span:last-child{overflow:hidden;text-overflow:ellipsis;max-width:100%}
+ .topbar{position:sticky;top:0;z-index:500;background:#fff;min-height:70px}
+ .content{padding-bottom:30px}
+ .content.chat-content{
+  height:calc(var(--ag-vh) - 70px - var(--bottom-height));
+  min-height:0;padding:6px 8px 8px;overflow:hidden
+ }
+ .chat-frame{min-height:0;height:100%;border-radius:14px}
+ .chat-main,.messages,.composer{min-height:0}
+ .chat-main{height:100%}
+ .messages{overscroll-behavior:contain;scroll-padding-bottom:20px}
+ .chat-welcome{margin:auto}
+ .composer{padding:8px 8px 10px}
+ .composer textarea,.field input,.search input,.modal input,.modal textarea{
+  font-size:16px;line-height:1.35;
+ }
+ .composer .round{min-width:42px;min-height:44px}
+ .btn,.chip,.quick,.nav button{min-height:44px}
+ .modal-backdrop{padding:12px}
+ .modal{max-height:calc(var(--ag-vh) - 26px);padding:19px;overflow-y:auto}
+ .toast{bottom:calc(var(--bottom-height) + 12px);right:12px;left:12px;max-width:none}
+ .keyboard-open .bottom-nav{display:none}
+ .keyboard-open .main{padding-bottom:0}
+ .keyboard-open .content.chat-content{height:calc(var(--ag-vh) - 70px)}
+ .keyboard-open .toast{bottom:14px}
+ .catalog{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .tool-card{min-height:150px}
+ .table-wrap{overflow-x:auto;scrollbar-width:thin}
+ .data-table{min-width:570px}
+}
+@media(max-width:480px){
+ .topbar{padding:0 13px}
+ .top-left h2{font-size:14px}
+ .top-brand-icon{width:38px;height:38px}
+ .mobile-menu{min-width:44px;min-height:44px}
+ .crumb{font-size:10px}
+ .content:not(.chat-content){padding:17px 13px 26px}
+ .catalog{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .tool-card{padding:13px;min-height:132px}
+ .hero{padding:24px 17px}
+ .pagehead{gap:12px;margin-bottom:16px}
+ .pagehead h1{font-size:22px}
+ .composer .round{padding:0;width:42px}
+ .chat-head .seb-avatar{width:39px;height:39px;min-width:39px}
+ .chat-head .chat-ident p{font-size:9px}
+ .messages{padding:12px}
+ .messages>.bubble{max-width:94%}
+ .chat-disclaimer{font-size:9px}
+ .stats,.quickgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .btn{white-space:normal}
+}
+@media(max-width:340px){
+ .bottom-nav button{font-size:9px}
+ .bottom-icon{font-size:20px}
+ .catalog{grid-template-columns:1fr}
+ .stats{grid-template-columns:1fr 1fr}
+}
+@media(prefers-reduced-motion:reduce){
+ .sidebar,.drawer-shade,.bottom-nav button{transition:none}
+ .messages{scroll-behavior:auto}
+}
