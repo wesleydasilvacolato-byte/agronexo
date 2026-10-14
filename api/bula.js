@@ -1,4 +1,5 @@
 import {rateGuard} from "../lib/security.js";
+import {identify} from "../lib/auth.js";
 /**
  * Busca complementar em páginas públicas da Embrapa (ATER+ Digital).
  * Validação estrita do nome e do domínio para NÃO inventar URLs de bula.
@@ -17,6 +18,7 @@ function matchProduct(html,name){
  return canonicalName.length>=5&&(pageName===canonicalName||pageName.startsWith(canonicalName+" "));
 }
 export default async function handler(req,res){
+ const auth=await identify(req,res);if(!auth)return;
  if(req.method!=="GET")return res.status(405).json({error:"Método não permitido."});
  if(!await rateGuard(req,res,{namespace:"embrapa-bula",limit:20,windowSec:60}))return;
  const raw=String(req.query?.nome||"").trim().slice(0,100),slug=slugify(raw);
