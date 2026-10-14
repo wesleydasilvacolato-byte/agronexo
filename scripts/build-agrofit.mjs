@@ -4,6 +4,8 @@
  * Source: https://dados.agricultura.gov.br/dataset/sistema-de-agrotoxicos-fitossanitarios-agrofit
  */
 import {mkdir,writeFile,readdir,rm,copyFile} from "node:fs/promises";
+import {readFile} from "node:fs/promises";
+import sharp from "sharp";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
 import {gzipSync} from "node:zlib";
@@ -132,12 +134,26 @@ async function prepareStatic(){
  await mkdir(path.join(publicRoot,"src"),{recursive:true});
  for(const [from,to] of [
   ["index.html","index.html"],
+  ["admin.html","admin.html"],
   ["style.css","style.css"],
+  ["auth.css","auth.css"],
+  ["manifest.webmanifest","manifest.webmanifest"],
+  ["sw.js","sw.js"],
+  ["src/boot.js","src/boot.js"],
+  ["src/admin.js","src/admin.js"],
   ["src/app.js","src/app.js"],
   ["src/calculators.js","src/calculators.js"],
   ["src/brand-assets.js","src/brand-assets.js"]
  ])await copyFile(path.join(projectRoot,from),path.join(publicRoot,to));
- console.log("[agrofit] interface copiada para public/");
+ const brandCode=await readFile(path.join(projectRoot,"src/brand-assets.js"),"utf8");
+ const icon=brandCode.match(/icon:"data:image\\/webp;base64,([^"]+)"/);
+ if(!icon)throw Error("Ícone da identidade oficial Agronexo não encontrado.");
+ const source=Buffer.from(icon[1],"base64");
+ await mkdir(path.join(publicRoot,"icons"),{recursive:true});
+ for(const n of [192,512]){
+  await sharp(source).resize(n,n,{fit:"contain",background:"#123C2B"}).png().toFile(path.join(publicRoot,"icons","icon-"+n+".png"));
+ }
+ console.log("[agrofit] interface, autenticação, painel e ícones PWA preparados em public/");
 }
 await prepareStatic();
 try{await build()}catch(err){
