@@ -1,5 +1,5 @@
-const CACHE="agronexo-static-v1.7-recovery";
-const ASSETS=["/","/index.html","/admin.html","/style.css","/auth.css","/src/boot.js","/src/app.js","/src/admin.js","/src/calculators.js","/src/brand-assets.js","/icons/icon-192.png","/icons/icon-512.png","/manifest.webmanifest"];
+const CACHE="agronexo-static-v1.8-admin";
+const ASSETS=["/","/index.html","/admin.html","/style.css","/auth.css","/src/boot.js","/src/routing.js","/src/app.js","/src/admin.js","/src/calculators.js","/src/brand-assets.js","/icons/icon-192.png","/icons/icon-512.png","/manifest.webmanifest"];
 self.addEventListener("install",event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()).catch(()=>self.skipWaiting()));
 });
@@ -17,9 +17,14 @@ self.addEventListener("fetch",event=>{
   return;
  }
  if(ASSETS.includes(url.pathname)){
-  event.respondWith(caches.match(request).then(cached=>cached||fetch(request).then(response=>{
-   if(response.ok){const copy=response.clone();caches.open(CACHE).then(c=>c.put(request,copy)).catch(()=>{})}
+  // Sempre buscar o bundle atualizado primeiro, evitando reutilizar a navegação
+  // administrativa antiga no Chrome/PWA depois de uma publicação.
+  event.respondWith(fetch(request,{cache:"no-store"}).then(response=>{
+   if(response.ok){
+    const copy=response.clone();
+    event.waitUntil(caches.open(CACHE).then(c=>c.put(request,copy)));
+   }
    return response;
-  })));
+  }).catch(()=>caches.match(request)));
  }
 });
