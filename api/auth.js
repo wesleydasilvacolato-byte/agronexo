@@ -23,7 +23,7 @@ export default async function handler(req,res){
   }
   try{
    const {admin,anon}=clients();
-   const email=String(process.env.ADMIN_EMAIL||"wesledasilvacolato@gmail.com").toLowerCase();
+   const email=String(process.env.ADMIN_EMAIL||"wesleydasilvacolato@gmail.com").toLowerCase();
    const result=await admin.from("agronexo_profiles").select("id,email,role,active,invitation_accepted_at,security_version").eq("email",email).maybeSingle();
    const profile=result.data;
    if(result.error||!profile||profile.role!=="admin"||!profile.active||profile.invitation_accepted_at){
@@ -56,7 +56,7 @@ export default async function handler(req,res){
    const user=checked.data.user;
    const email=String(user.email||"").toLowerCase();
    const {data:p,error}=await admin.from("agronexo_profiles").select("*").eq("id",user.id).maybeSingle();
-   if(error||!p||!p.active||p.role!=="admin"||email!=="wesledasilvacolato@gmail.com"||p.email!==email||p.invitation_accepted_at)return res.status(403).json({error:"Esse convite não pode criar ou alterar esta conta."});
+   if(error||!p||!p.active||p.role!=="admin"||email!=="wesleydasilvacolato@gmail.com"||p.email!==email||p.invitation_accepted_at)return res.status(403).json({error:"Esse convite não pode criar ou alterar esta conta."});
    const saved=await admin.auth.admin.updateUserById(user.id,{password,email_confirm:true});
    if(saved.error)return res.status(503).json({error:"Não foi possível definir a senha. Tente novamente."});
    const marked=await admin.from("agronexo_profiles").update({invitation_accepted_at:new Date().toISOString(),security_version:p.security_version+1}).eq("id",user.id);
