@@ -1,6 +1,9 @@
 import {ASSETS} from "./brand-assets.js";
 const root=document.querySelector("#app");
 let state=null,installEvent=null,loading=false;
+const inviteHash=new URLSearchParams(location.hash.slice(1));
+let invite=inviteHash.get("type")==="invite"&&inviteHash.get("access_token")?{accessToken:inviteHash.get("access_token")}:null;
+if(invite)history.replaceState(null,"",location.pathname+location.search);
 const escape=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 async function call(action,fields={}){
  const response=await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"same-origin",body:JSON.stringify({action,...fields})});
@@ -23,6 +26,14 @@ function renderLogin(msg=""){
  '<p id="auth-error" class="auth-error" role="alert" '+(msg?"":"hidden")+'>'+escape(msg)+'</p>'+
  '<button class="auth-primary" type="submit">Entrar na plataforma</button></form>'+
  '<button class="auth-link" type="button" data-auth-action="install">Instalar AGRONEXO no dispositivo</button>');
+}
+function renderInvitation(){
+ body('<h1>Ativar sua conta</h1><p class="auth-muted">Confirme seu convite de administrador e escolha uma senha nova, com pelo menos 12 caracteres.</p>'+
+ '<form id="invite-form" class="auth-form">'+
+ formField("invite-password","password","Nova senha","new-password",'minlength="12" maxlength="128"')+
+ formField("invite-password-confirm","password","Confirmar senha","new-password",'minlength="12" maxlength="128"')+
+ '<p id="auth-error" class="auth-error" role="alert" hidden></p>'+
+ '<button class="auth-primary" type="submit">Ativar minha conta</button></form>');
 }
 function renderPin(create=false,msg=""){
  body('<div class="auth-avatar"><img src="'+ASSETS.icon+'" alt=""></div>'+
@@ -51,6 +62,7 @@ async function enterApp(){
  }
 }
 async function boot(){
+ if(invite){renderInvitation();return}
  root.innerHTML='<div class="loading"><span class="load-orbit"></span><h2>AGRONEXO</h2><p>Verificando acesso...</p></div>';
  try{
   const response=await fetch("/api/auth",{credentials:"same-origin",cache:"no-store"});
@@ -63,13 +75,18 @@ async function boot(){
  }catch(e){renderLogin("Não foi possível verificar a conexão. Confira sua internet.")}
 }
 document.addEventListener("submit",async e=>{
- if(!["login-form","pin-form"].includes(e.target?.id))return;
+ if(!["login-form","pin-form","invite-form"].includes(e.target?.id))return;
  e.preventDefault();if(loading)return;loading=true;
  const button=e.target.querySelector("button[type=submit]");
  if(button)button.disabled=true;
  error("");
  try{
-  if(e.target.id==="login-form"){
+  if(e.target.id==="invite-form"){
+   const password=document.querySelector("#invite-password").value;
+   if(password.length<12||password!==document.querySelector("#invite-password-confirm").value)throw Error("As senhas precisam ser iguais e ter pelo menos 12 caracteres.");
+   await call("accept-invite",{accessToken:invite.accessToken,password});
+   invite=null;
+  }else if(e.target.id==="login-form"){
    await call("login",{email:document.querySelector("#login-email").value.trim(),password:document.querySelector("#login-password").value});
   }else{
    const pin=document.querySelector("#login-pin").value;
