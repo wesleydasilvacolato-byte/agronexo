@@ -11,7 +11,7 @@ export default async function handler(req,res){
  }
  if(!securePost(req,res,16000))return;
  const action=String(req.body?.action||"");
- if(!["login","pin","logout","accept-invite","activate-admin"].includes(action))return res.status(400).json({error:"Ação inválida."});
+ if(!["login","pin","logout","accept-invite","activate-admin","request-recovery","confirm-recovery"].includes(action))return res.status(400).json({error:"Ação inválida."});
  if(action==="logout"){clear(res);return res.status(200).json({ok:true})}
  if(!configured())return res.status(503).json({error:"A autenticação depende da configuração segura do banco Supabase."});
  if(action==="activate-admin"){
@@ -64,6 +64,44 @@ export default async function handler(req,res){
    const login=await anon.auth.signInWithPassword({email,password});
    if(login.error||!login.data.session)return res.status(200).json({ok:true,needLogin:true});
    loginCookie(res,login.data.session,{...p,security_version:p.security_version+1});
+   return res.status(200).json({ok:true,locked:true,pinSet:false});
+  }catch(e){return fail(res,e)}
+ }
+ if(action==="request-recovery"){
+  if(!await rateGuard(req,res,{namespace:"password-recovery",limit:3,windowSec:900}))return;
+  const email=String(req.body.email||"").trim().toLowerCase();
+  if(email.length>254||!/^\S+@\S+\.\S+$/.test(email))return res.status(400).json({error:"Informe um e-mail válido."});
+  try{
+   const {anon}=clients();
+   const redirectTo="https://agronexo-git-main-colato1.vercel.app/";
+   await anon.auth.resetPasswordForEmail(email,{redirectTo});
+  }catch(e){console.error("Falha ao solicitar recuperação:",e?.name||"request");}
+  // Resposta genérica para não revelar se uma conta existe.
+  return res.status(200).json({ok:true,message:"Se houver uma conta autorizada, enviaremos um link de recuperação."});
+ }
+ if(action==="confirm-recovery"){
+  if(!await rateGuard(req,res,{namespace:"password-recovery-confirm",limit:5,windowSec:900}))return;
+  const accessToken=String(req.body.accessToken||""),password=String(req.body.password||"");
+  if(accessToken.length<100||accessToken.length>6000||password.length<12||password.length>128)return res.status(400).json({error:"Link inválido ou senha menor que 12 caracteres."});
+  try{
+   const {admin,anon}=clients();
+   const verified=await anon.auth.getUser(accessToken);
+   if(verified.error||!verified.data?.user)return res.status(401).json({error:"Link inválido ou expirado. Solicite outro."});
+   const user=verified.data.user;
+   const {data:p,error}=await admin.from("agronexo_profiles").select("*").eq("id",user.id).maybeSingle();
+   if(error||!p?.active||p.email?.toLowerCase()!==user.email?.toLowerCase()){
+    return res.status(403).json({error:"Esta conta não está autorizada no AGRONEXO."});
+   }
+   const changed=await admin.auth.admin.updateUserById(user.id,{password,email_confirm:true});
+   if(changed.error)return res.status(503).json({error:"Não foi possível atualizar a senha. Solicite outro link."});
+   const nextV=p.security_version+1;
+   const saved=await admin.from("agronexo_profiles").update({security_version:nextV,
+      invitation_accepted_at:p.invitation_accepted_at||new Date().toISOString(),
+      pin_hash:null,pin_attempts:0,pin_blocked_until:null}).eq("id",user.id);
+   if(saved.error)return res.status(503).json({error:"Senha atualizada, mas o cadastro requer revisão. Entre em contato com o administrador."});
+   const login=await anon.auth.signInWithPassword({email:p.email,password});
+   if(login.error||!login.data?.session)return res.status(200).json({ok:true,needLogin:true});
+   loginCookie(res,login.data.session,{...p,security_version:nextV});
    return res.status(200).json({ok:true,locked:true,pinSet:false});
   }catch(e){return fail(res,e)}
  }
