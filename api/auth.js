@@ -11,9 +11,40 @@ export default async function handler(req,res){
  }
  if(!securePost(req,res,16000))return;
  const action=String(req.body?.action||"");
- if(!["login","pin","logout","accept-invite"].includes(action))return res.status(400).json({error:"Ação inválida."});
+ if(!["login","pin","logout","accept-invite","activate-admin"].includes(action))return res.status(400).json({error:"Ação inválida."});
  if(action==="logout"){clear(res);return res.status(200).json({ok:true})}
  if(!configured())return res.status(503).json({error:"A autenticação depende da configuração segura do banco Supabase."});
+ if(action==="activate-admin"){
+  if(!await rateGuard(req,res,{namespace:"admin-offline-activation",limit:5,windowSec:900}))return;
+  const token=String(req.body.token||"").trim().toLowerCase();
+  const password=String(req.body.password||"");
+  if(!/^[0-9a-f]{64}$/.test(token)||password.length<12||password.length>128){
+   return res.status(400).json({error:"Informe o código de ativação de 64 caracteres e uma senha nova de 12 a 128 caracteres."});
+  }
+  try{
+   const {admin,anon}=clients();
+   const email=String(process.env.ADMIN_EMAIL||"wesledasilvacolato@gmail.com").toLowerCase();
+   const result=await admin.from("agronexo_profiles").select("id,email,role,active,invitation_accepted_at,security_version").eq("email",email).maybeSingle();
+   const profile=result.data;
+   if(result.error||!profile||profile.role!=="admin"||!profile.active||profile.invitation_accepted_at){
+    return res.status(403).json({error:"A ativação não está disponível para esta conta."});
+   }
+   const info=await admin.auth.admin.getUserById(profile.id);
+   if(info.error||info.data?.user?.email?.toLowerCase()!==email)return res.status(403).json({error:"Conta administrativa inconsistente."});
+   const claimed=await admin.rpc("agronexo_claim_admin_setup",{p_user_id:profile.id,p_token:token});
+   if(claimed.error||claimed.data!==true)return res.status(401).json({error:"Código inválido, expirado ou já utilizado. Gere um novo código no Supabase."});
+   const changed=await admin.auth.admin.updateUserById(profile.id,{password,email_confirm:true});
+   if(changed.error)return res.status(503).json({error:"O código foi consumido, mas não foi possível definir a senha. Gere outro código no Supabase."});
+   const updated=await admin.from("agronexo_profiles").update({
+    invitation_accepted_at:new Date().toISOString(),security_version:profile.security_version+1
+   }).eq("id",profile.id).is("invitation_accepted_at",null);
+   if(updated.error)return res.status(503).json({error:"Senha criada, mas não foi possível concluir a ativação. Entre em contato com o suporte."});
+   const auth=await anon.auth.signInWithPassword({email,password});
+   if(auth.error||!auth.data?.session)return res.status(200).json({ok:true,needLogin:true});
+   loginCookie(res,auth.data.session,{...profile,security_version:profile.security_version+1});
+   return res.status(200).json({ok:true,locked:true,pinSet:false});
+  }catch(e){return fail(res,e)}
+ }
  if(action==="accept-invite"){
   if(!await rateGuard(req,res,{namespace:"admin-invite-accept",limit:5,windowSec:900}))return;
   const accessToken=String(req.body.accessToken||""),password=String(req.body.password||"");
