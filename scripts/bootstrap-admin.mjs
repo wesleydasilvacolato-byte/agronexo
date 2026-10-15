@@ -13,8 +13,12 @@ let id=null;
 const listed=await admin.auth.admin.listUsers({page:1,perPage:1000});
 if(listed.error)throw listed.error;
 const existing=listed.data.users.find(u=>u.email?.toLowerCase()===email);
-if(existing)id=existing.id;
-else{
+if(existing){
+ // Nunca promover automaticamente uma conta pré-existente de origem desconhecida.
+ const {data:p,error}=await admin.from("agronexo_profiles").select("role").eq("id",existing.id).maybeSingle();
+ if(error||p?.role!=="admin")throw Error("O e-mail administrativo já pertence a uma conta não administrativa. Verifique a identidade no Supabase antes de prosseguir.");
+ id=existing.id;
+}else{
  const created=await admin.auth.admin.createUser({email,password,email_confirm:true,user_metadata:{full_name:"Administrador AGRONEXO"}});
  if(created.error)throw created.error;
  id=created.data.user.id;
