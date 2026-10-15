@@ -1,4 +1,5 @@
 import {ASSETS} from "./brand-assets.js";
+import {resolveEntry} from "./routing.js";
 const root=document.querySelector("#app");
 let state=null,installEvent=null,loading=false;
 const inviteHash=new URLSearchParams(location.hash.slice(1));
@@ -72,10 +73,17 @@ function renderSetup(){
 async function enterApp(){
  window.AGRONEXO_ADMIN=state.user.role==="admin";
  window.AGRONEXO_USER=state.user;
- if(location.pathname==="/admin.html"){
-  if(!window.AGRONEXO_ADMIN){location.replace("/");return}
+ const route=resolveEntry({
+  pathname:location.pathname,
+  role:state.user.role,
+  mode:new URLSearchParams(location.search).get("modo")||""
+ });
+ if(route.redirect){location.replace(route.redirect);return}
+ if(route.page==="admin"){
+  document.title="Administração | AGRONEXO";
   await import("./admin.js");
  }else{
+  document.title="AGRONEXO | Plataforma Agrícola";
   await import("./app.js");
  }
 }
