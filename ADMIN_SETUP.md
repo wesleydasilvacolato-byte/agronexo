@@ -10,6 +10,14 @@
 - PWA com manifesto, ícones oficiais Agronexo (192/512px) e service worker que **não armazena respostas de APIs ou credenciais**.
 - Proteção de chat, transcrição, bulário e fichas por autenticação e PIN no servidor.
 
+## Conta administrativa inicial — convite enviado
+
+A conta de administrador **wesledasilvacolato@gmail.com** foi criada no Supabase Auth por convite de e-mail. O perfil `role=admin` está em `public.agronexo_profiles`. A variável sensível da Vercel está atualmente nomeada `SUPABASE_KEY`, reconhecida pelo backend como alias de `SUPABASE_SERVICE_ROLE_KEY`. A compilação de convite foi disparada na **prévia** por `ADMIN_BOOTSTRAP_ONCE=1`; após a emissão, essa variável foi alterada para `0`.
+
+Abra o convite no e-mail e defina uma senha **nova de 12 caracteres ou mais** na página do Agronexo. Depois, configure um PIN de 4 dígitos. Nunca cole o link do convite em chats ou sistemas públicos porque pode conter tokens privados.
+
+A URL de prévia é `https://agronexo-git-main-colato1.vercel.app`. Para aceitar convites, o Supabase Auth deve permitir essa URL em **Authentication → URL Configuration → Redirect URLs**. Caso o link não seja redirecionado corretamente, ajuste essa configuração no painel Supabase antes de solicitar novo convite. A publicação de produção deve ocorrer **após** a validação do login, PIN, permissões administrativas e das APIs protegidas.
+
 ## Para ativar em produção — obrigatório
 
 1. **Conecte o Supabase à conversa ou crie um projeto em https://supabase.com/dashboard**. Não compartilhe chaves por mensagem.
@@ -20,7 +28,7 @@
    - `SUPABASE_ANON_KEY`: chave pública `anon` do Supabase
    - `SUPABASE_SERVICE_ROLE_KEY`: chave secreta `service_role` (somente servidor)
    - `AUTH_SESSION_SECRET`: 32 bytes criptograficamente aleatórios em base64. Exemplo para **gerar no seu computador**: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`
-5. A conta administrativa inicial é criada **fora do build automático** por `npm run bootstrap:admin`, em um ambiente controlado, com essas variáveis e:
+5. Para novos ambientes, a conta inicial pode ser convidada por `npm run bootstrap:admin` em ambiente controlado; a rotina exige `ADMIN_INVITE_REDIRECT` e executa apenas sob solicitação explícita no build.
    - `ADMIN_EMAIL` — e-mail exato informado pelo proprietário, configurado como padrão no script.
    - `ADMIN_INITIAL_PASSWORD` — uma **nova senha forte e exclusiva** de pelo menos 12 caracteres. **Não reutilize a senha que foi compartilhada em uma conversa.**
 6. Após configurar o Supabase, faça implantação de prévia, teste login, configuração do PIN, bloqueio de PIN, acesso restrito a `/admin.html`, criação e suspensão de contas e revogação de sessões; só então promova para Production.
