@@ -89,7 +89,7 @@ document.addEventListener("click",async e=>{
  const action=btn.dataset.adminAction;
  if(action==="close"){document.querySelector(".admin-backdrop")?.remove();return}
  if(action==="new"){newUser();return}
- if(action==="workspace"){location.href="/";return}
+ if(action==="workspace"){location.href="/?modo=plataforma";return}
  if(action==="logout"){await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"logout"})});location.replace("/");return}
  if(action==="reset-password"){resetPassword(btn.dataset.id);return}
  const user=store.users.find(u=>u.id===btn.dataset.id);if(!user)return;
