@@ -5,7 +5,7 @@ import {createClient} from "@supabase/supabase-js";
  */
 const url=process.env.SUPABASE_URL;
 const key=process.env.SUPABASE_SERVICE_ROLE_KEY||process.env.SUPABASE_KEY;
-const email=(process.env.ADMIN_EMAIL||"wesledasilvacolato@gmail.com").trim().toLowerCase();
+const email=(process.env.ADMIN_EMAIL||"wesleydasilvacolato@gmail.com").trim().toLowerCase();
 const redirect=process.env.ADMIN_INVITE_REDIRECT;
 if(!url||!key||!redirect||!/^https:\/\//.test(redirect)){
  throw Error("Convite bloqueado: configure SUPABASE_URL, chave service role e ADMIN_INVITE_REDIRECT.");
