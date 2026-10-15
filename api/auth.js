@@ -11,9 +11,31 @@ export default async function handler(req,res){
  }
  if(!securePost(req,res,16000))return;
  const action=String(req.body?.action||"");
- if(!["login","pin","logout"].includes(action))return res.status(400).json({error:"Ação inválida."});
+ if(!["login","pin","logout","accept-invite"].includes(action))return res.status(400).json({error:"Ação inválida."});
  if(action==="logout"){clear(res);return res.status(200).json({ok:true})}
  if(!configured())return res.status(503).json({error:"A autenticação depende da configuração segura do banco Supabase."});
+ if(action==="accept-invite"){
+  if(!await rateGuard(req,res,{namespace:"admin-invite-accept",limit:5,windowSec:900}))return;
+  const accessToken=String(req.body.accessToken||""),password=String(req.body.password||"");
+  if(accessToken.length<100||accessToken.length>6000||password.length<12||password.length>128)return res.status(400).json({error:"Convite inválido ou senha muito curta. Use pelo menos 12 caracteres."});
+  try{
+   const {admin,anon}=clients();
+   const checked=await anon.auth.getUser(accessToken);
+   if(checked.error||!checked.data.user)return res.status(401).json({error:"O convite expirou ou não é válido. Solicite outro convite."});
+   const user=checked.data.user;
+   const email=String(user.email||"").toLowerCase();
+   const {data:p,error}=await admin.from("agronexo_profiles").select("*").eq("id",user.id).maybeSingle();
+   if(error||!p||!p.active||p.role!=="admin"||email!=="wesledasilvacolato@gmail.com"||p.email!==email||p.invitation_accepted_at)return res.status(403).json({error:"Esse convite não pode criar ou alterar esta conta."});
+   const saved=await admin.auth.admin.updateUserById(user.id,{password,email_confirm:true});
+   if(saved.error)return res.status(503).json({error:"Não foi possível definir a senha. Tente novamente."});
+   const marked=await admin.from("agronexo_profiles").update({invitation_accepted_at:new Date().toISOString(),security_version:p.security_version+1}).eq("id",user.id);
+   if(marked.error)return res.status(503).json({error:"A senha foi atualizada, mas não foi possível concluir a ativação. Contate o administrador."});
+   const login=await anon.auth.signInWithPassword({email,password});
+   if(login.error||!login.data.session)return res.status(200).json({ok:true,needLogin:true});
+   loginCookie(res,login.data.session,{...p,security_version:p.security_version+1});
+   return res.status(200).json({ok:true,locked:true,pinSet:false});
+  }catch(e){return fail(res,e)}
+ }
  if(action==="login"){
   if(!await rateGuard(req,res,{namespace:"password-login",limit:8,windowSec:900}))return;
   const email=String(req.body.email||"").trim().toLowerCase(),password=String(req.body.password||"");
