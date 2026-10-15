@@ -1,30 +1,28 @@
 import {createClient} from "@supabase/supabase-js";
+/** Executa SOMENTE em build de prévia explicitamente habilitado.
+ * Envia convite ao e-mail administrativo, sem criar ou divulgar senhas.
+ * Operação idempotente: se a conta estiver cadastrada corretamente, não envia novamente.
+ */
 const url=process.env.SUPABASE_URL;
-const key=process.env.SUPABASE_SERVICE_ROLE_KEY;
+const key=process.env.SUPABASE_SERVICE_ROLE_KEY||process.env.SUPABASE_KEY;
 const email=(process.env.ADMIN_EMAIL||"wesledasilvacolato@gmail.com").trim().toLowerCase();
-const password=process.env.ADMIN_INITIAL_PASSWORD;
-if(!url||!key||!password||password.length<12){
- console.error("Defina SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY e ADMIN_INITIAL_PASSWORD (mínimo de 12 caracteres).");
- process.exit(1);
+const redirect=process.env.ADMIN_INVITE_REDIRECT;
+if(!url||!key||!redirect||!/^https:\/\//.test(redirect)){
+ throw Error("Convite bloqueado: configure SUPABASE_URL, chave service role e ADMIN_INVITE_REDIRECT.");
 }
-if(!/^https:\/\//.test(url)){console.error("Supabase deve usar HTTPS.");process.exit(1)}
 const admin=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
-let id=null;
 const listed=await admin.auth.admin.listUsers({page:1,perPage:1000});
 if(listed.error)throw listed.error;
 const existing=listed.data.users.find(u=>u.email?.toLowerCase()===email);
 if(existing){
- // Nunca promover automaticamente uma conta pré-existente de origem desconhecida.
- const {data:p,error}=await admin.from("agronexo_profiles").select("role").eq("id",existing.id).maybeSingle();
- if(error||p?.role!=="admin")throw Error("O e-mail administrativo já pertence a uma conta não administrativa. Verifique a identidade no Supabase antes de prosseguir.");
- id=existing.id;
+ const prof=await admin.from("agronexo_profiles").select("role").eq("id",existing.id).maybeSingle();
+ if(prof.error||prof.data?.role!=="admin")throw Error("E-mail existente sem perfil administrativo válido; intervenção manual necessária.");
+ console.log("[admin-bootstrap] Conta administrativa já existe. Nenhum convite adicional enviado.");
 }else{
- const created=await admin.auth.admin.createUser({email,password,email_confirm:true,user_metadata:{full_name:"Administrador AGRONEXO"}});
- if(created.error)throw created.error;
- id=created.data.user.id;
+ const invited=await admin.auth.admin.inviteUserByEmail(email,{redirectTo:redirect,data:{full_name:"Administrador AGRONEXO"}});
+ if(invited.error||!invited.data.user)throw Error("Falha ao convidar e-mail administrativo: "+(invited.error?.message||"Sem usuário"));
+ const u=invited.data.user;
+ const saved=await admin.from("agronexo_profiles").insert({id:u.id,email,display_name:"Administrador AGRONEXO",role:"admin",active:true});
+ if(saved.error)throw Error("Convite emitido, mas cadastro do administrador falhou: "+saved.error.message);
+ console.log("[admin-bootstrap] Convite administrativo registrado e solicitado por e-mail.");
 }
-const saved=await admin.from("agronexo_profiles").upsert({id,email,display_name:"Administrador AGRONEXO",role:"admin",active:true},{onConflict:"id"});
-if(saved.error)throw saved.error;
-console.log("Conta administrativa preparada para:",email);
-console.log("A senha inicial não foi exibida e deve permanecer fora do repositório.");
-console.log("Após o primeiro login, defina o PIN de 4 dígitos no dispositivo.");
