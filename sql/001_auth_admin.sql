@@ -10,6 +10,7 @@ create table if not exists public.agronexo_profiles (
   role text not null default 'user' check (role in ('admin','user')),
   active boolean not null default true,
   pin_hash text,
+  invitation_accepted_at timestamptz,
   pin_attempts integer not null default 0 check (pin_attempts between 0 and 100),
   pin_blocked_until timestamptz,
   security_version integer not null default 1,
