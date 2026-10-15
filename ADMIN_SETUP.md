@@ -12,7 +12,7 @@
 
 ## Conta administrativa inicial — convite enviado
 
-A conta de administrador **wesledasilvacolato@gmail.com** foi criada no Supabase Auth por convite de e-mail. O perfil `role=admin` está em `public.agronexo_profiles`. A variável sensível da Vercel está atualmente nomeada `SUPABASE_KEY`, reconhecida pelo backend como alias de `SUPABASE_SERVICE_ROLE_KEY`. A compilação de convite foi disparada na **prévia** por `ADMIN_BOOTSTRAP_ONCE=1`; após a emissão, essa variável foi alterada para `0`.
+A conta de administrador **wesleydasilvacolato@gmail.com** foi criada no Supabase Auth por convite de e-mail. O perfil `role=admin` está em `public.agronexo_profiles`. A variável sensível da Vercel está atualmente nomeada `SUPABASE_KEY`, reconhecida pelo backend como alias de `SUPABASE_SERVICE_ROLE_KEY`. A compilação de convite foi disparada na **prévia** por `ADMIN_BOOTSTRAP_ONCE=1`; após a emissão, essa variável foi alterada para `0`.
 
 Abra o convite no e-mail e defina uma senha **nova de 12 caracteres ou mais** na página do Agronexo. Depois, configure um PIN de 4 dígitos. Nunca cole o link do convite em chats ou sistemas públicos porque pode conter tokens privados.
 
