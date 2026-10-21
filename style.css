@@ -452,3 +452,13 @@ button{touch-action:manipulation}
  .composer .round{width:38px;min-width:38px}
  .chat-header-new{min-width:38px}
 }
+
+
+/* Botão do histórico compacto mantém o ícone visível em telas pequenas. */
+.chat-menu-icon{font-size:17px;line-height:1;display:inline-block}
+.chat-history-toggle{gap:6px;align-items:center}
+@media(max-width:650px){
+ .chat-history-toggle{font-size:12px!important;min-width:42px;min-height:42px}
+ .chat-history-label{display:none}
+ .chat-menu-icon{font-size:19px}
+}
