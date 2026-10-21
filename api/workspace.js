@@ -24,12 +24,18 @@ export default async function handler(req,res){
  const {p,admin}=session;
  try{
   if(req.method==="GET"){
-   const {data,error}=await admin.from("agronexo_workspace_records")
-    .select("collection,item_id,payload,deleted_at,updated_at").eq("user_id",p.id)
-    .order("updated_at",{ascending:true}).limit(5001);
-   if(error)throw error;
-   if(data.length>5000)return res.status(413).json({error:"Sua conta excedeu 5.000 registros. Exporte um backup e contate o suporte."});
-   return res.status(200).json({records:data});
+   const records=[];
+   for(let offset=0;offset<=5000;offset+=500){
+    const {data,error}=await admin.from("agronexo_workspace_records")
+     .select("collection,item_id,payload,deleted_at,updated_at").eq("user_id",p.id)
+     .order("updated_at",{ascending:true}).order("collection",{ascending:true}).order("item_id",{ascending:true})
+     .range(offset,offset+499);
+    if(error)throw error;
+    records.push(...data);
+    if(records.length>5000)return res.status(413).json({error:"Sua conta excedeu 5.000 registros. Exporte um backup e contate o suporte."});
+    if(data.length<500)break;
+   }
+   return res.status(200).json({records});
   }
   const mode=String(req.body?.mode||"");
   if(!["import","write"].includes(mode))return res.status(400).json({error:"Modo de sincronização inválido."});
