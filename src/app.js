@@ -2,6 +2,8 @@ import {CALCS,GROUPS,runCalc} from "./calculators.js";
 import {ASSETS} from "./brand-assets.js";
 import {createWorkspaceSync} from "./workspace-sync.js";
 import {revokeOffline} from "./offline-access.js";
+import {sortedChats,renameChat,pinChat,removeChat,previewChat} from "./chat-management.js";
+import {renderAssistant} from "./chat-format.js";
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const money=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
@@ -53,7 +55,7 @@ updateVisualHeight();
 window.visualViewport?.addEventListener("resize",updateVisualHeight);
 window.addEventListener("resize",updateVisualHeight);
 const iconLink=document.createElement("link");iconLink.rel="icon";iconLink.type="image/webp";iconLink.href=ASSETS.icon;document.head.append(iconLink);
-let page="dashboard",filter="",group="Todas",selectedCalc=1,calcValues={},searchTimer=null,bulState={results:[],total:0,query:"",loading:false,source:"",error:"",backend:""},pendingFiles=[],recording=null,dialog=null,chatBusy=false;
+let page="dashboard",filter="",group="Todas",selectedCalc=1,calcValues={},searchTimer=null,bulState={results:[],total:0,query:"",loading:false,source:"",error:"",backend:""},pendingFiles=[],recording=null,dialog=null,chatBusy=false,chatMenuId=null,chatSearch="",chatHistoryOpen=false;
 const navigation=[["dashboard","⌂","Visão geral"],["calc","▦","Calculadoras"],["bulario","▤","Bulário AGROFIT"],["chat","◈","Sebastião IA"],["projects","◫","Projetos e áreas"],["quotes","≋","Cotações"],["notes","✎","Caderno de campo"],["settings","⚙","Configurações"]];
 function toast(t){$(".toast")?.remove();const e=document.createElement("div");e.className="toast";e.textContent=t;document.body.append(e);setTimeout(()=>e.remove(),4300)}
 function pageTitle(){return navigation.find(x=>x[0]===page)?.[2]||"AGRONEXO"}
@@ -172,7 +174,59 @@ function quotes(root){root.innerHTML=head("GESTÃO DE PREÇOS","Cotações agrí
 function notes(root){root.innerHTML=head("ROTINA DO CAMPO","Caderno de campo","Guarde ocorrências, observações, amostragens e atividades.",'<button class="btn" data-action="note-new">+ Nova anotação</button>')+(state.notes.length?'<div class="cards-two">'+state.notes.map(n=>'<div class="card info-card"><span class="pill">'+date(n.time)+'</span><h3 style="margin-top:15px">'+esc(n.title)+'</h3><p style="white-space:pre-wrap">'+esc(n.body)+'</p><div style="margin-top:15px"><button class="btn btn-light" data-remove="notes" data-id="'+n.id+'">Excluir</button></div></div>').join("")+'</div>':empty("✎","Seu caderno está vazio","Registre informações das visitas técnicas e acompanhe atividades."))}
 function settings(root){root.innerHTML=head("PREFERÊNCIAS","Configurações e dados","Transparência, fontes, armazenamento e integrações.")+'<div class="cards-two"><div class="card info-card"><h3>Dados e sincronização</h3><p>Projetos, cotações, caderno de campo e conversas do Sebastião são vinculados à sua conta no Supabase. Uma cópia local protege alterações feitas sem internet, que serão enviadas quando a conexão retornar. Histórico das calculadoras permanece apenas neste dispositivo. O modo offline exige uma autorização com PIN neste aparelho, válida por 7 dias. O navegador precisa ter carregado o aplicativo online ao menos uma vez.</p><p><strong data-cloud-status>Sincronizando</strong></p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:19px"><button class="btn" data-action="sync-now">Sincronizar agora</button><button class="btn btn-light" data-action="enable-offline">Habilitar acesso offline</button><button class="btn btn-light" data-action="reconnect">Reconectar conta</button><button class="btn btn-ghost" data-action="relogin">Entrar novamente para sincronizar</button><button class="btn btn-light" data-action="export">Exportar backup JSON</button><button class="btn btn-light" data-action="import">Importar backup</button><button class="btn btn-light" data-action="clear-local" style="color:#a12c2c">Limpar cópia local</button><button class="btn btn-ghost" data-action="logout">Sair da conta</button><button class="btn btn-light" data-action="install-app">Instalar aplicativo</button></div></div><div class="card info-card"><h3>Assistente Sebastião</h3><p>O Sebastião usa a API Gemini do Google pelo servidor; a chave nunca fica no navegador. Configure GEMINI_API_KEY na Vercel para ativar texto, imagem, áudio e vídeo.</p><p>Vídeos pequenos (até 2,2 MB) podem ser enviados com áudio; vídeos maiores são analisados por três quadros, sem áudio. As conversas em texto são sincronizadas entre dispositivos da mesma conta. Anexos multimídia são processados e não ficam armazenados na nuvem.</p><button class="btn btn-ghost" data-nav="chat" style="margin-top:16px">Abrir assistente →</button></div><div class="card info-card"><h3>Fontes científicas e regulatórias</h3><p>Bulário: arquivos CSV públicos AGROFIT/MAPA, publicados sob CC BY. A plataforma não copia integralmente conteúdos editoriais da Embrapa e não possui acesso privilegiado à API protegida.</p><a class="btn btn-light" href="'+AGROFIT_SOURCE+'" target="_blank" rel="noopener" style="margin-top:14px">Ver base oficial ↗</a></div><div class="card info-card"><h3>Uso técnico responsável</h3><p>Os 49 módulos apresentam estimativas matemáticas. Alguns métodos dependem de coeficientes e tabelas regionais. A decisão de aplicar fertilizantes, corretivos e defensivos deve considerar recomendações oficiais e profissional habilitado.</p><p>AGRONEXO · Protótipo funcional em evolução.</p></div></div><input hidden type="file" accept="application/json" id="import-file">'}
 function activeChat(){let c=state.chats.find(x=>x.id===state.selectedChat);if(!c){c={id:uid(),title:"Nova conversa",time:new Date().toISOString(),messages:[]};state.chats.unshift(c);state.selectedChat=c.id;save()}return c}
-function chat(root){const c=activeChat();root.innerHTML='<div class="card chat-frame"><aside class="chat-rail"><button class="btn" data-action="new-chat">+ Nova conversa</button><h3>Conversas</h3><div style="display:flex;flex-direction:column;gap:3px;overflow:auto">'+state.chats.map(t=>'<button class="chat-item '+(t.id===c.id?"active":"")+'" data-chat="'+t.id+'">◈ &nbsp; '+esc(t.title)+'</button>').join("")+'</div><div style="margin-top:auto"><button class="btn btn-ghost" data-action="delete-chat" style="width:100%">Excluir conversa atual</button></div></aside><div class="chat-main"><div class="chat-head"><img class="seb-avatar" src="'+ASSETS.sebAvatar+'" alt="Rosto do Sebastião"><div class="chat-ident"><b>Sebastião · Assistente Agronexo</b><p>Consultas em linguagem natural · Dados técnicos requerem conferência</p></div><button class="btn btn-light chat-history-toggle" data-action="chat-history" aria-label="Mostrar conversas">Conversas</button></div><div class="messages" id="messages">'+(c.messages.length?c.messages.map(m=>'<div class="bubble '+(m.role==="user"?"user":"assistant")+'">'+esc(m.content)+'<small>'+new Date(m.time).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})+'</small></div>').join(""):'<div class="chat-welcome"><img class="seb-avatar" src="'+ASSETS.sebAvatar+'" alt="Sebastião sorrindo"><h2>Olá! Eu sou o Sebastião.</h2><p>Sou o assistente do AGRONEXO. Posso ajudar com questões do agro, imagens, áudios, vídeos curtos e leitura de documentos fotografados.</p><div class="suggestions">'+["Como interpretar uma análise de solo?","O que é CTC do solo?","Ajude a planejar uma vistoria de campo"].map(t=>'<button data-prompt="'+esc(t)+'">'+esc(t)+'</button>').join("")+'</div></div>')+'</div><div class="composer"><div id="attachment-info" class="attachment-info"></div><div class="composer-input"><button class="round" data-action="attach" title="Enviar foto, áudio ou vídeo">＋</button><button class="round" data-action="mic" title="Gravar áudio">◉</button><textarea id="chat-text" placeholder="Escreva uma mensagem ao Sebastião..." rows="1"></textarea><button class="round send" data-action="send-chat" title="Enviar">↑</button></div><div class="chat-disclaimer">O Sebastião pode cometer erros. Valide orientações técnicas e siga bulas e prescrições oficiais.</div><input id="chat-file" type="file" accept="image/*,video/*,audio/*" hidden multiple></div></div></div>';setTimeout(()=>{const e=$("#messages");if(e)e.scrollTop=e.scrollHeight},0)}
+function chatListMarkup(){
+ const all=sortedChats(state.chats),found=all.filter(c=>String(c.title||"").toLocaleLowerCase("pt-BR").includes(chatSearch.toLocaleLowerCase("pt-BR")));
+ if(!found.length)return '<p class="chat-no-results">'+(chatSearch?"Nenhuma conversa encontrada.":"Suas conversas aparecerão aqui.")+'</p>';
+ return found.map(t=>{
+  const id=esc(String(t.id)),current=t.id===state.selectedChat,pin=Boolean(t.pinned);
+  return '<div class="chat-conversation'+(current?" active":"")+'">'+
+   '<button type="button" class="chat-select" data-chat="'+id+'" aria-current="'+(current?"true":"false")+'" title="'+esc(t.title)+'">'+
+    (pin?'<span class="chat-pin-symbol" aria-label="Fixada">◆</span>':'<span class="chat-dot" aria-hidden="true">◈</span>')+
+    '<span class="chat-select-text"><strong>'+esc(t.title||"Nova conversa")+'</strong><small>'+esc(previewChat(t))+'</small></span></button>'+
+   '<button type="button" class="chat-more" data-chat-menu="'+id+'" aria-label="Opções de '+esc(t.title||"conversa")+'" aria-expanded="'+(chatMenuId===t.id)+'">⋯</button>'+
+   (chatMenuId===t.id?'<div class="chat-context" role="group" aria-label="Opções da conversa">'+
+    '<button type="button" data-chat-command="rename" data-chat-id="'+id+'">✎ Renomear</button>'+
+    '<button type="button" data-chat-command="pin" data-chat-id="'+id+'">'+(pin?"◇ Desafixar":"◆ Fixar no topo")+'</button>'+
+    '<button type="button" class="danger" data-chat-command="delete" data-chat-id="'+id+'">Excluir conversa</button>'+
+   '</div>':"")+
+  '</div>';
+ }).join("");
+}
+function refreshChatList(){
+ const list=$("#chat-list");if(list)list.innerHTML=chatListMarkup();
+}
+function chat(root){
+ const c=activeChat(),pinnedCount=state.chats.filter(c=>c.pinned).length;
+ const messages=c.messages.length?c.messages.map((m,i)=>{
+  const ai=m.role!=="user",time=new Date(m.time||Date.now()).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+  return '<article class="bubble '+(ai?"assistant":"user")+'" aria-label="'+(ai?"Resposta do Sebastião":"Sua mensagem")+'">'+
+   (ai?'<div class="chat-message-label">SEBASTIÃO</div><div class="chat-rich">'+renderAssistant(m.content)+'</div>':'<div class="chat-user-text">'+esc(m.content)+'</div>')+
+   '<div class="chat-message-foot"><small>'+time+'</small>'+(ai?'<button type="button" data-chat-copy="'+i+'" title="Copiar resposta" aria-label="Copiar resposta">Copiar</button>':"")+'</div></article>';
+ }).join(""):'<div class="chat-welcome"><img class="seb-avatar" src="'+ASSETS.sebAvatar+'" alt="Sebastião, assistente do AGRONEXO"><h2>O que vamos resolver no campo hoje?</h2><p>Sou Sebastião, seu parceiro na agronomia. Tire dúvidas, interprete informações e organize o trabalho rural.</p><div class="suggestions">'+["Como interpretar uma análise de solo?","Calcule a população de plantas por hectare","Qual a diferença entre pH e CTC?"].map(t=>'<button type="button" data-prompt="'+esc(t)+'">'+esc(t)+'</button>').join("")+'</div></div>';
+ root.innerHTML='<div class="card chat-frame'+(chatHistoryOpen?" show-history":"")+'">'+
+ '<button class="chat-history-shade" type="button" data-action="chat-close-history" aria-label="Fechar histórico"></button>'+
+ '<aside class="chat-rail" id="chat-rail" aria-label="Histórico de conversas">'+
+ '<div class="chat-rail-top"><div><strong>Conversas</strong><small>'+state.chats.length+' no histórico'+(pinnedCount?' · '+pinnedCount+' fixada(s)':'')+'</small></div><button type="button" data-action="chat-close-history" class="chat-rail-close" aria-label="Fechar histórico">×</button></div>'+
+ '<button class="btn chat-new" type="button" data-action="new-chat">＋ Nova conversa</button>'+
+ '<label class="chat-search-label" for="chat-search">Buscar conversa<input id="chat-search" type="search" placeholder="Buscar no histórico" value="'+esc(chatSearch)+'" autocomplete="off"></label>'+
+ '<div id="chat-list" class="chat-list" aria-label="Lista de conversas">'+chatListMarkup()+'</div>'+
+ '<p class="chat-rail-foot">Histórico sincronizado na sua conta.</p></aside>'+
+ '<section class="chat-main" aria-label="Conversa com Sebastião">'+
+ '<header class="chat-head"><img class="seb-avatar" src="'+ASSETS.sebAvatar+'" alt="Sebastião">'+
+ '<div class="chat-ident"><b>Sebastião <span class="chat-ai-tag">IA AGRONÔMICA</span></b><p>'+esc(c.title||"Nova conversa")+'</p></div>'+
+ '<button type="button" class="btn btn-light chat-history-toggle" data-action="chat-history" aria-label="Abrir histórico">☰ Conversas</button>'+
+ '<button type="button" class="chat-header-new" data-action="new-chat" aria-label="Nova conversa" title="Nova conversa">＋</button></header>'+
+ '<div class="messages" id="messages" role="log" aria-label="Mensagens" aria-live="polite">'+messages+'</div>'+
+ '<div class="composer"><div id="attachment-info" class="attachment-info" aria-live="polite"></div>'+
+ '<div class="composer-input"><button type="button" class="round" data-action="attach" title="Enviar foto, áudio ou vídeo" aria-label="Anexar arquivo">＋</button>'+
+ '<button type="button" class="round" data-action="mic" title="Gravar áudio" aria-label="Gravar áudio">◉</button>'+
+ '<textarea id="chat-text" placeholder="Pergunte ao Sebastião..." rows="1" aria-label="Mensagem ao Sebastião"></textarea>'+
+ '<button type="button" class="round send" data-action="send-chat" title="Enviar mensagem" aria-label="Enviar mensagem">↑</button></div>'+
+ '<div class="chat-disclaimer">Respostas geradas por IA podem conter erros. Confira bulas, fontes oficiais e orientações técnicas.</div>'+
+ '<input id="chat-file" type="file" accept="image/*,video/*,audio/*" hidden multiple></div></section></div>';
+ setTimeout(()=>{const pane=$("#messages");if(pane)pane.scrollTop=pane.scrollHeight},0);
+}
+
 async function readFile(f){const limit=12*1024*1024;if(f.size>limit)throw Error("Arquivo muito grande: máximo de 12 MB.");return await new Promise((resolve,reject)=>{const rd=new FileReader();rd.onload=()=>resolve(String(rd.result));rd.onerror=reject;rd.readAsDataURL(f)})}
 async function videoFrames(file){const url=URL.createObjectURL(file);const video=document.createElement("video");video.preload="auto";video.muted=true;video.src=url;await new Promise((resolve,reject)=>{video.onloadedmetadata=resolve;video.onerror=()=>reject(Error("Vídeo inválido."));setTimeout(()=>reject(Error("Não foi possível ler o vídeo.")),10000)});const duration=Math.min(video.duration||1,120),out=[];try{for(const at of [0.15,0.5,0.85]){video.currentTime=Math.min(duration*at,Math.max(0,duration-.08));await new Promise((resolve,reject)=>{video.onseeked=resolve;video.onerror=()=>reject(Error("Falha ao obter quadro."));setTimeout(resolve,2500)});const cv=document.createElement("canvas");cv.width=576;cv.height=Math.round(576*(video.videoHeight||9)/(video.videoWidth||16));cv.getContext("2d").drawImage(video,0,0,cv.width,cv.height);out.push({type:"image",data:cv.toDataURL("image/jpeg",0.68),name:file.name+" (quadro "+Math.round(at*100)+"%)"})}}finally{URL.revokeObjectURL(url);video.remove()}return out}
 async function imageData(file){
