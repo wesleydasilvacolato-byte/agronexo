@@ -100,6 +100,9 @@ async function reconnectOffline(){
   const response=await fetch("/api/auth",{credentials:"same-origin",cache:"no-store"});
   const data=await response.json();
   if(!response.ok||data.locked||data.user?.id!==window.AGRONEXO_USER?.id)return false;
+  state=data;
+  window.AGRONEXO_USER=data.user;
+  window.AGRONEXO_ADMIN=data.user.role==="admin";
   window.AGRONEXO_OFFLINE=false;
   window.dispatchEvent(new Event("agronexo:authenticated"));
   return true;
