@@ -109,7 +109,7 @@ window.AGRONEXO_RECONNECT=reconnectOffline;
 window.AGRONEXO_ENROLL_OFFLINE=async pin=>{
  if(window.AGRONEXO_OFFLINE||!state?.user||state.locked)throw Error("Entre com internet para ativar o acesso offline.");
  if(navigator.onLine===false)throw Error("Ative este aparelho enquanto estiver conectado.");
- if(!/^\\d{4}$/.test(pin))throw Error("Informe o PIN de quatro números.");
+ if(!/^\d{4}$/.test(pin))throw Error("Informe o PIN de quatro números.");
  await call("pin",{mode:"unlock",pin});
  return authorizeOffline({pin,user:state.user});
 };
