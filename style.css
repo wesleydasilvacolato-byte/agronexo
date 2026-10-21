@@ -326,3 +326,8 @@ button{touch-action:manipulation}
  .sidebar,.drawer-shade,.bottom-nav button{transition:none}
  .messages{scroll-behavior:auto}
 }
+
+/* Botão PWA sempre acessível em celular, tablet e desktop */
+.ag-install-shortcut{font-size:11px!important;padding:10px 12px!important;white-space:nowrap!important;border-radius:10px!important;flex-shrink:0}
+@media(max-width:760px){.topbar .top-right{gap:5px}.topbar .ag-install-shortcut{font-size:10px!important;padding:9px 7px!important}.topbar .top-brand-icon{width:30px;height:30px}}
+@media(max-width:480px){.topbar .top-brand-icon{display:none}.topbar .top-left h2{font-size:13px}.topbar .top-right{margin-left:auto}}
