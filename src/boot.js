@@ -114,6 +114,9 @@ window.AGRONEXO_ENROLL_OFFLINE=async pin=>{
  return authorizeOffline({pin,user:state.user});
 };
 window.addEventListener("online",()=>{if(window.AGRONEXO_OFFLINE)reconnectOffline()});
+// A perda temporária da API pode durar mais que o evento "online".
+const reconnectTimer=setInterval(()=>{if(window.AGRONEXO_OFFLINE&&navigator.onLine!==false)reconnectOffline()},45000);
+reconnectTimer?.unref?.();
 async function enterApp(){
  window.AGRONEXO_OFFLINE=false;
  window.AGRONEXO_ADMIN=state.user.role==="admin";
