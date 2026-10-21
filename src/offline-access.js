@@ -47,7 +47,7 @@ export async function unlockOffline({storage=localStorage,cryptoApi=crypto,pin,n
  if(!user)throw Error("Sem autorização offline neste aparelho. Entre com internet primeiro.");
  let tries={count:0,until:0};
  try{tries=JSON.parse(storage.getItem(LIMIT_KEY)||"null")||tries}catch{}
- if(now<Number(tries.until)||0)throw Error("Acesso offline temporariamente bloqueado. Aguarde 15 minutos.");
+ if(now<Number(tries.until||0))throw Error("Acesso offline temporariamente bloqueado. Aguarde 15 minutos.");
  const raw=JSON.parse(storage.getItem(KEY));
  try{
   const key=await cipher(pin,fromB64(raw.salt),cryptoApi);
