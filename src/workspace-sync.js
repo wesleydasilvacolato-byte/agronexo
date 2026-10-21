@@ -55,13 +55,16 @@ export function createWorkspaceSync({userId,storage,read,apply,status,fetcher=fe
  const saveQueue=()=>storage.setItem(queueKey,JSON.stringify(pending));
  const publish=m=>{if(status)status(m,pending.length)};
  async function request(method,body){
-  const response=await fetcher("/api/workspace",{
-   method,credentials:"same-origin",cache:"no-store",
-   ...(method==="POST"?{headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}:{})
-  });
-  const data=await response.json().catch(()=>({}));
-  if(!response.ok)throw Error(data.error||"Servidor indisponível");
-  return data;
+  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),12000);
+  try{
+   const response=await fetcher("/api/workspace",{
+    method,credentials:"same-origin",cache:"no-store",signal:controller.signal,
+    ...(method==="POST"?{headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}:{})
+   });
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok)throw Error(data.error||"Servidor indisponível");
+   return data;
+  }finally{clearTimeout(timeout)}
  }
  async function sendBatches(mode,operations){
   for(let i=0;i<operations.length;i+=4){
