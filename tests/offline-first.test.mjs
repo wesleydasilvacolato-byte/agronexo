@@ -84,3 +84,22 @@ test("PWA abre o HTML do AGRONEXO em modo aviao e nunca intercepta APIs",async()
  });
  assert.equal(intercepted,false);
 });
+
+test("pré-cache PWA mantém arquivos válidos quando um recurso falha",async()=>{
+ const {runInNewContext}=await import("node:vm");
+ const sw=readFileSync(new URL("../sw.js",import.meta.url),"utf8");
+ const handlers={},saved=[],failed=[];
+ const cache={add:async path=>{if(path==="/icons/icon-512.png"){failed.push(path);throw Error("404")}saved.push(path)}};
+ const context={
+  URL,Response,console,Promise,
+  self:{location:{origin:"https://agronexo-colato1.vercel.app"},addEventListener:(name,handler)=>{handlers[name]=handler},skipWaiting:async()=>{}},
+  caches:{open:async()=>cache}
+ };
+ runInNewContext(sw,context);
+ let lifecycle;
+ handlers.install({waitUntil:promise=>{lifecycle=promise}});
+ await lifecycle;
+ assert.ok(saved.includes("/index.html"));
+ assert.ok(saved.includes("/src/app.js"));
+ assert.deepEqual(failed,["/icons/icon-512.png"]);
+});

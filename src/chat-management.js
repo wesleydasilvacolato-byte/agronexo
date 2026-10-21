@@ -22,3 +22,16 @@ export function previewChat(c){
  const last=c.messages?.at(-1)?.content||"";
  return String(last||"Conversa vazia").replace(/\s+/g," ").slice(0,70);
 }
+
+/**
+ * Mantém a posição de leitura quando a sincronização atualiza o histórico.
+ * Se o usuário já estava perto do final, acompanha as novas mensagens.
+ */
+export function restoredChatScroll(oldTop,oldHeight,oldViewport,newHeight,newViewport){
+ const numbers=[oldTop,oldHeight,oldViewport,newHeight,newViewport].map(Number);
+ if(numbers.some(x=>!Number.isFinite(x)))return Math.max(0,Number(newHeight)-Number(newViewport)||0);
+ const [top,oldFull,oldVisible,newFull,newVisible]=numbers;
+ const oldMax=Math.max(0,oldFull-oldVisible),newMax=Math.max(0,newFull-newVisible);
+ const distanceFromBottom=Math.max(0,oldMax-Math.max(0,top));
+ return distanceFromBottom<=80?newMax:Math.max(0,newMax-distanceFromBottom);
+}
