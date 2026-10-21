@@ -371,7 +371,39 @@ function formModal(type) {
 }
 function exportData(){const blob=new Blob([JSON.stringify({version:1,exported:new Date().toISOString(),...state},null,2)],{type:"application/json"});const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="agronexo-backup-"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(u)}
 async function importData(file){try{if(file.size>8e6)throw Error("Backup excede 8 MB.");const j=JSON.parse(await file.text());if(!Array.isArray(j.chats)||!Array.isArray(j.calcHistory)||!Array.isArray(j.projects)||!Array.isArray(j.quotes)||!Array.isArray(j.notes))throw Error("Formato de backup inválido.");state=normalizeState(j);save();shell();toast("Dados importados com sucesso.")}catch(e){toast(e.message)}}
-document.addEventListener("click",async e=>{if(e.target.classList.contains("modal-backdrop")){$(".modal-backdrop")?.remove();return}const el=e.target.closest("[data-nav],[data-calc],[data-group],[data-action],[data-chat],[data-prompt],[data-remove],[data-bulario-detail],[data-bulario-example],[data-bula-lookup]");if(!el)return;if(el.dataset.nav){navigate(el.dataset.nav);return}if(el.dataset.calc){selectedCalc=Number(el.dataset.calc);calcValues={};calcDetail($("#content"));return}if(el.dataset.group){group=el.dataset.group;calculators($("#content"));return}if(el.dataset.chat){state.selectedChat=el.dataset.chat;save();chat($("#content"));return}if(el.dataset.prompt){$("#chat-text").value=el.dataset.prompt;sendChat();return}if(el.dataset.remove){if(!window.confirm("Excluir este registro? Essa ação não pode ser desfeita."))return;const collection=el.dataset.remove;state[collection]=state[collection].filter(x=>x.id!==el.dataset.id);save();renderContent();toast("Registro excluído.");return}const action=el.dataset.action;if(action==="install-app"){window.AGRONEXO_INSTALL?.();return}
+document.addEventListener("click",async e=>{if(e.target.classList.contains("modal-backdrop")){$(".modal-backdrop")?.remove();return}const el=e.target.closest("[data-nav],[data-calc],[data-group],[data-action],[data-chat],[data-chat-menu],[data-chat-command],[data-chat-copy],[data-prompt],[data-remove],[data-bulario-detail],[data-bulario-example],[data-bula-lookup]");if(!el)return;if(el.dataset.nav){navigate(el.dataset.nav);return}if(el.dataset.calc){selectedCalc=Number(el.dataset.calc);calcValues={};calcDetail($("#content"));return}if(el.dataset.group){group=el.dataset.group;calculators($("#content"));return}if(el.dataset.chatMenu!==undefined){
+ chatMenuId=chatMenuId===el.dataset.chatMenu?null:el.dataset.chatMenu;
+ refreshChatList();return;
+}
+if(el.dataset.chatCommand){
+ const id=el.dataset.chatId,c=state.chats.find(x=>String(x.id)===id);
+ if(!c){chatMenuId=null;refreshChatList();return}
+ const action=el.dataset.chatCommand;
+ chatMenuId=null;
+ if(action==="rename"){
+  openDialog('<h2>Renomear conversa</h2><p class="muted">Escolha um nome curto para encontrar esta conversa depois.</p>'+
+   '<form id="chat-rename-form" data-chat-id="'+esc(id)+'"><div class="field"><label for="chat-rename-title">Nome da conversa</label><input id="chat-rename-title" name="title" maxlength="80" value="'+esc(c.title||"Nova conversa")+'" required autofocus></div>'+
+   '<div class="modal-actions"><button type="button" class="btn btn-light" data-action="close-modal">Cancelar</button><button type="submit" class="btn">Salvar nome</button></div></form>');
+  $("#chat-rename-title")?.focus();return;
+ }
+ if(action==="pin"){state.chats=pinChat(state.chats,id);save();refreshChatList();return}
+ if(action==="delete"){
+  if(chatBusy&&String(state.selectedChat)===id){toast("Aguarde o Sebastião concluir a resposta antes de excluir esta conversa.");return}
+  if(!window.confirm('Excluir a conversa "'+c.title+'" e todas as mensagens? A exclusão será sincronizada.')){refreshChatList();return}
+  state.chats=removeChat(state.chats,id);
+  if(String(state.selectedChat)===id)state.selectedChat=null;
+  save();chatHistoryOpen=false;chat($("#content"));toast("Conversa excluída.");return;
+ }
+ return;
+}
+if(el.dataset.chatCopy!==undefined){
+ const c=state.chats.find(x=>x.id===state.selectedChat),m=c?.messages?.[Number(el.dataset.chatCopy)];
+ if(m?.role==="assistant"){
+  try{await navigator.clipboard.writeText(m.content);toast("Resposta copiada.")}catch{toast("Não foi possível copiar. Selecione o texto da resposta.")}
+ }
+ return;
+}
+if(el.dataset.chat){state.selectedChat=el.dataset.chat;chatMenuId=null;chatHistoryOpen=false;save();chat($("#content"));return}if(el.dataset.prompt){$("#chat-text").value=el.dataset.prompt;sendChat();return}if(el.dataset.remove){if(!window.confirm("Excluir este registro? Essa ação não pode ser desfeita."))return;const collection=el.dataset.remove;state[collection]=state[collection].filter(x=>x.id!==el.dataset.id);save();renderContent();toast("Registro excluído.");return}const action=el.dataset.action;if(action==="install-app"){window.AGRONEXO_INSTALL?.();return}
  if(action==="enable-offline"){
   if(window.AGRONEXO_OFFLINE||navigator.onLine===false){toast("Para ativar o acesso offline, conecte-se à internet primeiro.");return}
   openDialog('<h2>Habilitar modo offline</h2><p class="muted">Confirme seu PIN de quatro números. Este dispositivo poderá abrir os registros locais sem internet por sete dias. Não use aparelhos públicos ou compartilhados.</p>'+
@@ -394,14 +426,26 @@ document.addEventListener("click",async e=>{if(e.target.classList.contains("moda
 if(action==="admin-panel"){window.location.href="/admin.html";return}
 if(action==="logout"){revokeOffline();await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"logout"})}).catch(()=>{});window.location.replace("/");return}
 if(action==="menu"){const open=$("#side")?.classList.toggle("open");document.body?.classList?.toggle("drawer-open",!!open)}
-if(action==="close-menu"){$("#side")?.classList.remove("open");document.body?.classList.remove("drawer-open")}if(action==="back-calcs"){selectedCalc=1;calculators($("#content"))}if(action==="calc-reset"){calcValues={};calcDetail($("#content"))}if(action==="calc-save"){const c=CALCS.find(x=>x.id===Number(selectedCalc));const v={};c.fields.forEach(f=>v[f.key]=calcValues[f.key]??f.value);const r=runCalc(c,v);if(r.error){toast(r.error);return}state.calcHistory.unshift({id:uid(),calcId:c.id,name:c.title,values:v,result:num(r.value),unit:r.unit,time:new Date().toISOString()});state.calcHistory=state.calcHistory.slice(0,100);save();toast("Cálculo adicionado ao histórico.")}if(action==="calc-history")calcHistoryModal();if(action==="close-modal"){$(".modal-backdrop")?.remove();dialog=null}if(action==="bulario-reload")fetchBulario();if(el.dataset.bularioDetail!==undefined)bularioDetails(el.dataset.bularioDetail);if(el.dataset.bulaLookup!==undefined)checkBulaEmbrapa(el.dataset.bulaLookup);if(el.dataset.bularioExample){bulState.query=el.dataset.bularioExample;const inp=$("#bulario-search");if(inp)inp.value=bulState.query;fetchBulario()}if(action==="project-new")formModal("project");if(action==="quote-new")formModal("quote");if(action==="note-new")formModal("note");if(action==="chat-history")$(".chat-frame")?.classList.toggle("show-history");if(action==="new-chat"){state.selectedChat=null;activeChat();chat($("#content"))}if(action==="delete-chat"){if(!window.confirm("Excluir esta conversa e todas as mensagens?"))return;state.chats=state.chats.filter(c=>c.id!==state.selectedChat);state.selectedChat=null;save();chat($("#content"))}if(action==="send-chat")sendChat();if(action==="attach")$("#chat-file")?.click();if(action==="mic")toggleMic();if(action==="export")exportData();if(action==="import")$("#import-file")?.click();if(action==="clear-local"){if(workspaceSync?.pendingCount()){toast("Há alterações não sincronizadas. Aguarde a nuvem antes de limpar este dispositivo.");return}if(window.confirm("Limpar apenas a cópia deste navegador? Os registros sincronizados continuarão disponíveis na sua conta. Faça um backup antes.")){localStorage.removeItem(key);state=normalizeState(defaultState);shell();await workspaceSync?.refresh();toast("Cópia local atualizada com os registros da conta.")}}});
+if(action==="close-menu"){$("#side")?.classList.remove("open");document.body?.classList.remove("drawer-open")}if(action==="back-calcs"){selectedCalc=1;calculators($("#content"))}if(action==="calc-reset"){calcValues={};calcDetail($("#content"))}if(action==="calc-save"){const c=CALCS.find(x=>x.id===Number(selectedCalc));const v={};c.fields.forEach(f=>v[f.key]=calcValues[f.key]??f.value);const r=runCalc(c,v);if(r.error){toast(r.error);return}state.calcHistory.unshift({id:uid(),calcId:c.id,name:c.title,values:v,result:num(r.value),unit:r.unit,time:new Date().toISOString()});state.calcHistory=state.calcHistory.slice(0,100);save();toast("Cálculo adicionado ao histórico.")}if(action==="calc-history")calcHistoryModal();if(action==="close-modal"){$(".modal-backdrop")?.remove();dialog=null}if(action==="bulario-reload")fetchBulario();if(el.dataset.bularioDetail!==undefined)bularioDetails(el.dataset.bularioDetail);if(el.dataset.bulaLookup!==undefined)checkBulaEmbrapa(el.dataset.bulaLookup);if(el.dataset.bularioExample){bulState.query=el.dataset.bularioExample;const inp=$("#bulario-search");if(inp)inp.value=bulState.query;fetchBulario()}if(action==="project-new")formModal("project");if(action==="quote-new")formModal("quote");if(action==="note-new")formModal("note");if(action==="chat-history"){chatHistoryOpen=!chatHistoryOpen;$(".chat-frame")?.classList.toggle("show-history",chatHistoryOpen);return}
+ if(action==="chat-close-history"){chatHistoryOpen=false;$(".chat-frame")?.classList.remove("show-history");return}if(action==="new-chat"){if(chatBusy){toast("Aguarde a resposta para abrir outra conversa.");return}state.selectedChat=null;chatMenuId=null;chatHistoryOpen=false;activeChat();chat($("#content"))}if(action==="delete-chat"){if(chatBusy){toast("Aguarde o término da resposta.");return}if(!window.confirm("Excluir esta conversa e todas as mensagens?"))return;state.chats=removeChat(state.chats,state.selectedChat);state.selectedChat=null;save();chat($("#content"))}if(action==="send-chat")sendChat();if(action==="attach")$("#chat-file")?.click();if(action==="mic")toggleMic();if(action==="export")exportData();if(action==="import")$("#import-file")?.click();if(action==="clear-local"){if(workspaceSync?.pendingCount()){toast("Há alterações não sincronizadas. Aguarde a nuvem antes de limpar este dispositivo.");return}if(window.confirm("Limpar apenas a cópia deste navegador? Os registros sincronizados continuarão disponíveis na sua conta. Faça um backup antes.")){localStorage.removeItem(key);state=normalizeState(defaultState);shell();await workspaceSync?.refresh();toast("Cópia local atualizada com os registros da conta.")}}});
 document.addEventListener("focusin",e=>{if(window.innerWidth<=850&&(e.target.matches?.("input:not([type=file]),textarea,select")))document.body?.classList?.add("keyboard-open")});
 document.addEventListener("focusout",()=>setTimeout(updateVisualHeight,180));
-document.addEventListener("input",e=>{if(e.target.id==="calc-search"){filter=e.target.value;const pos=e.target.selectionStart;calculators($("#content"));const i=$("#calc-search");i?.focus();i?.setSelectionRange(pos,pos)}if(e.target.id==="bulario-search"){bulState.query=e.target.value;clearTimeout(searchTimer);searchTimer=setTimeout(fetchBulario,700)}if(e.target.dataset.calcField){calcValues[e.target.dataset.calcField]=e.target.value;updateCalc()}});
+document.addEventListener("input",e=>{
+ if(e.target.id==="chat-search"){chatSearch=e.target.value;refreshChatList();return}
+ if(e.target.id==="chat-text"){
+  const input=e.target;input.style.height="auto";input.style.height=Math.min(input.scrollHeight,132)+"px";return;
+ }
+ if(e.target.id==="calc-search"){filter=e.target.value;const pos=e.target.selectionStart;calculators($("#content"));const i=$("#calc-search");i?.focus();i?.setSelectionRange(pos,pos)}if(e.target.id==="bulario-search"){bulState.query=e.target.value;clearTimeout(searchTimer);searchTimer=setTimeout(fetchBulario,700)}if(e.target.dataset.calcField){calcValues[e.target.dataset.calcField]=e.target.value;updateCalc()}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){$("#side")?.classList.remove("open");document.body?.classList.remove("drawer-open");$(".modal-backdrop")?.remove();return}
  if(e.target.id==="chat-text"&&e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();sendChat()}});
 document.addEventListener("change",async e=>{if(e.target.id==="chat-file"){await attachments(e.target.files);e.target.value=""}if(e.target.id==="import-file"){if(e.target.files?.[0])await importData(e.target.files[0])}});
 document.addEventListener("submit",async e=>{
+ if(e.target.id==="chat-rename-form"){
+  e.preventDefault();const id=e.target.dataset.chatId,title=e.target.querySelector("#chat-rename-title")?.value||"";
+  try{state.chats=renameChat(state.chats,id,title);save();$(".modal-backdrop")?.remove();chatMenuId=null;chat($("#content"));toast("Conversa renomeada.")}
+  catch(err){toast(err.message)}
+  return;
+ }
  if(e.target.id==="offline-enroll-form"){
   e.preventDefault();
   const pin=e.target.querySelector("#offline-enroll-pin")?.value||"";
