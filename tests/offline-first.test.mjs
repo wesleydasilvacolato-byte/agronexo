@@ -51,3 +51,36 @@ test("service worker faz fallback offline apenas para HTML publico e arquivos es
  assert.match(app,/enable-offline/);
  assert.match(build,/"src\/offline-access\.js"/);
 });
+
+test("PWA abre o HTML do AGRONEXO em modo aviao e nunca intercepta APIs",async()=>{
+ const {runInNewContext}=await import("node:vm");
+ const sw=readFileSync(new URL("../sw.js",import.meta.url),"utf8");
+ const handlers={},visited=[];
+ const resources=new Map([["/index.html",{status:200,kind:"workspace"}],["/admin.html",{status:200,kind:"admin-login"}]]);
+ const context={
+  URL,Response,console,
+  self:{location:{origin:"https://agronexo-colato1.vercel.app"},addEventListener:(name,handler)=>{handlers[name]=handler}},
+  caches:{open:async()=>({match:async path=>{visited.push(path);return resources.get(path)}})},
+  fetch:async()=>{throw Error("Sem rede")},
+ };
+ runInNewContext(sw,context);
+ const navigate=async path=>{
+  let result;
+  handlers.fetch({
+   request:{method:"GET",mode:"navigate",url:"https://agronexo-colato1.vercel.app"+path},
+   respondWith:value=>{result=value}
+  });
+  return result;
+ };
+ const workspace=await navigate("/?offline=1");
+ assert.equal(workspace.kind,"workspace");
+ const admin=await navigate("/admin.html");
+ assert.equal(admin.kind,"admin-login");
+ assert.deepEqual(visited,["/index.html","/admin.html"]);
+ let intercepted=false;
+ handlers.fetch({
+  request:{method:"GET",mode:"cors",url:"https://agronexo-colato1.vercel.app/api/workspace"},
+  respondWith:()=>{intercepted=true}
+ });
+ assert.equal(intercepted,false);
+});
