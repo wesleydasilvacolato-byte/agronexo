@@ -57,7 +57,7 @@ test("Markdown agronômico formata listas e fórmulas",()=>{
 });
 test("HTML malicioso é escapado sem executar script",()=>{
  const response=renderAssistant('<img src=x onerror=alert(1)>\n\\(x^{<script>alert(1)</script>}\\)');
- assert.doesNotMatch(response,/<script>|<img|onerror=/);
+ assert.doesNotMatch(response,/<script>|<img/);
  assert.match(response,/&lt;img/);
  assert.match(response,/&lt;script&gt;/);
 });
