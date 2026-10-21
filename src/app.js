@@ -214,7 +214,7 @@ function chat(root){
  '<section class="chat-main" aria-label="Conversa com Sebastião">'+
  '<header class="chat-head"><img class="seb-avatar" src="'+ASSETS.sebAvatar+'" alt="Sebastião">'+
  '<div class="chat-ident"><b>Sebastião <span class="chat-ai-tag">IA AGRONÔMICA</span></b><p>'+esc(c.title||"Nova conversa")+'</p></div>'+
- '<button type="button" class="btn btn-light chat-history-toggle" data-action="chat-history" aria-label="Abrir histórico">☰ Conversas</button>'+
+ '<button type="button" class="btn btn-light chat-history-toggle" data-action="chat-history" aria-label="Abrir histórico"><span class="chat-menu-icon" aria-hidden="true">☰</span><span class="chat-history-label">Conversas</span></button>'+
  '<button type="button" class="chat-header-new" data-action="new-chat" aria-label="Nova conversa" title="Nova conversa">＋</button></header>'+
  '<div class="messages" id="messages" role="log" aria-label="Mensagens" aria-live="polite">'+messages+'</div>'+
  '<div class="composer"><div id="attachment-info" class="attachment-info" aria-live="polite"></div>'+
