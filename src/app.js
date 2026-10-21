@@ -297,7 +297,7 @@ async function sendChat(){
     (videos.length?"\n[Vídeo curto enviado]":"");
   const entry={role:"user",content:display,time:new Date().toISOString()};
   conversation.messages.push(entry);
-  if(conversation.messages.length===1)conversation.title=(content||"Mensagem multimídia").slice(0,50);
+  if(conversation.messages.length===1&&!conversation.customTitle)conversation.title=(content||"Mensagem multimídia").slice(0,50);
   save();
   if(page==="chat"&&state.selectedChat===conversation.id)chat($("#content"));
   const pane=page==="chat"&&state.selectedChat===conversation.id?$("#messages"):null;
