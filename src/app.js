@@ -466,7 +466,18 @@ document.addEventListener("submit",async e=>{
 const userId=String(window.AGRONEXO_USER?.id||"");
 workspaceSync=createWorkspaceSync({
  userId,storage:localStorage,read:()=>state,canSync:()=>!chatBusy&&!window.AGRONEXO_OFFLINE,
- apply:remote=>{state=normalizeState(remote);try{persistLocal()}catch{};if(!chatBusy)renderContent()},
+ apply:remote=>{
+  // Não apagar a mensagem que o usuário está digitando quando a nuvem atualizar.
+  const field=$("#chat-text"),draft=page==="chat"?field?.value:null;
+  const wasFocused=!!field&&document.activeElement===field;
+  state=normalizeState(remote);
+  try{persistLocal()}catch{}
+  if(!chatBusy){
+   renderContent();
+   const restored=page==="chat"&&draft!=null?$("#chat-text"):null;
+   if(restored){restored.value=draft;restored.style.height="auto";restored.style.height=Math.min(restored.scrollHeight,132)+"px";if(wasFocused)restored.focus()}
+  }
+ },
  status:(status,pending)=>{cloudState=status;pendingSync=pending;syncDisplay()}
 });
 // Exibir a cópia local imediatamente. A sincronização da nuvem nunca deve
