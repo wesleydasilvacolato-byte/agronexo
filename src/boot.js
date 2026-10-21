@@ -1,8 +1,10 @@
 import {ASSETS} from "./brand-assets.js";
 import {resolveEntry} from "./routing.js";
 import {authorizeOffline,unlockOffline,offlineInfo,revokeOffline} from "./offline-access.js";
+import {createAppInstaller} from "./install-app.js";
 const root=document.querySelector("#app");
-let state=null,installEvent=null,loading=false;
+let state=null,loading=false;
+const installer=createAppInstaller();
 const inviteHash=new URLSearchParams(location.hash.slice(1));
 let invite=inviteHash.get("type")==="invite"&&inviteHash.get("access_token")?{accessToken:inviteHash.get("access_token")}:null;
 let recovery=inviteHash.get("type")==="recovery"&&inviteHash.get("access_token")?{accessToken:inviteHash.get("access_token")}:null;
@@ -204,15 +206,8 @@ document.addEventListener("click",async e=>{
  if(el.dataset.authAction==="back-login"){location.href="/";return}
  if(el.dataset.authAction==="offline"){location.href="/?offline=1";return}
  if(el.dataset.authAction==="logout"){revokeOffline();await call("logout").catch(()=>{});location.replace("/");return}
- if(el.dataset.authAction==="install"){
-  if(installEvent){installEvent.prompt();await installEvent.userChoice;installEvent=null}
-  else alert("No Android/Chrome: menu ⋮ → Instalar aplicativo. No iPhone/iPad: Compartilhar → Adicionar à Tela de Início.");
- }
+ if(el.dataset.authAction==="install"){installer.open();return}
 });
-window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installEvent=e});
-window.AGRONEXO_INSTALL=async()=>{
- if(installEvent){installEvent.prompt();await installEvent.userChoice;installEvent=null}
- else alert("Android/Chrome: menu ⋮ → Instalar aplicativo. iPhone/iPad: Compartilhar → Adicionar à Tela de Início.");
-};
+window.AGRONEXO_INSTALL=()=>installer.open();
 if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{});
 await boot();
