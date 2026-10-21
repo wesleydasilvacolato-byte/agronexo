@@ -1,5 +1,6 @@
 import {ASSETS} from "./brand-assets.js";
 import {resolveEntry} from "./routing.js";
+import {authorizeOffline,unlockOffline,offlineInfo,revokeOffline} from "./offline-access.js";
 const root=document.querySelector("#app");
 let state=null,installEvent=null,loading=false;
 const inviteHash=new URLSearchParams(location.hash.slice(1));
@@ -28,7 +29,8 @@ function renderLogin(msg=""){
  '<p id="auth-error" class="auth-error" role="alert" '+(msg?"":"hidden")+'>'+escape(msg)+'</p>'+
  '<button class="auth-primary" type="submit">Entrar na plataforma</button></form>'+
  '<button class="auth-link" type="button" data-auth-action="recovery">Esqueci minha senha</button>'+
- '<button class="auth-link" type="button" data-auth-action="install">Instalar AGRONEXO no dispositivo</button>');
+ '<button class="auth-link" type="button" data-auth-action="install">Instalar AGRONEXO no dispositivo</button>'+
+ (offlineInfo() ? '<button class="auth-link" type="button" data-auth-action="offline">Abrir sem internet</button>':"")');
 }
 function renderInvitation(){
  body('<h1>Ativar sua conta</h1><p class="auth-muted">Confirme seu convite de administrador e escolha uma senha nova, com pelo menos 12 caracteres.</p>'+
@@ -70,7 +72,50 @@ function renderSetup(){
  '<p class="auth-note">Para ativar: aplique a migração SQL, configure as quatro variáveis do Supabase na Vercel e inicialize o primeiro administrador. Nenhuma senha administrativa está embutida no código.</p>'+
  '<button class="auth-link" type="button" data-auth-action="install">Instalar aplicativo</button>');
 }
+function renderOfflineUnlock(msg=""){
+ const info=offlineInfo();
+ if(!info){renderLogin("Para usar sem internet, desbloqueie sua conta uma vez enquanto estiver conectado.");return}
+ if(location.pathname==="/admin.html"){location.replace("/?offline=1");return}
+ body('<div class="auth-avatar"><img src="'+ASSETS.icon+'" alt=""></div>'+
+ '<h1>Modo offline</h1><p class="auth-muted">Olá, '+escape(info.name)+'. Você pode usar as calculadoras e salvar seus registros neste dispositivo. O acesso offline expira após sete dias da última autorização online.</p>'+
+ '<form id="offline-form" class="auth-form">'+
+ '<label class="auth-field" for="offline-pin">PIN deste dispositivo<input id="offline-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="off" required></label>'+
+ '<p id="auth-error" class="auth-error" role="alert" '+(msg?"":"hidden")+'>'+escape(msg)+'</p>'+
+ '<button class="auth-primary" type="submit">Entrar sem internet</button></form>'+
+ '<button class="auth-link" type="button" data-auth-action="back-login">Entrar online quando houver conexão</button>');
+ document.querySelector("#offline-pin")?.focus();
+}
+async function enterOffline(pin){
+ const user=await unlockOffline({pin});
+ window.AGRONEXO_OFFLINE=true;
+ window.AGRONEXO_ADMIN=false;
+ window.AGRONEXO_USER=user;
+ document.title="AGRONEXO | Modo offline";
+ await import("./app.js");
+}
+async function reconnectOffline(){
+ if(!window.AGRONEXO_OFFLINE)return true;
+ if(navigator.onLine===false)return false;
+ try{
+  const response=await fetch("/api/auth",{credentials:"same-origin",cache:"no-store"});
+  const data=await response.json();
+  if(!response.ok||data.locked||data.user?.id!==window.AGRONEXO_USER?.id)return false;
+  window.AGRONEXO_OFFLINE=false;
+  window.dispatchEvent(new Event("agronexo:authenticated"));
+  return true;
+ }catch{return false}
+}
+window.AGRONEXO_RECONNECT=reconnectOffline;
+window.AGRONEXO_ENROLL_OFFLINE=async pin=>{
+ if(window.AGRONEXO_OFFLINE||!state?.user||state.locked)throw Error("Entre com internet para ativar o acesso offline.");
+ if(navigator.onLine===false)throw Error("Ative este aparelho enquanto estiver conectado.");
+ if(!/^\\d{4}$/.test(pin))throw Error("Informe o PIN de quatro números.");
+ await call("pin",{mode:"unlock",pin});
+ return authorizeOffline({pin,user:state.user});
+};
+window.addEventListener("online",()=>{if(window.AGRONEXO_OFFLINE)reconnectOffline()});
 async function enterApp(){
+ window.AGRONEXO_OFFLINE=false;
  window.AGRONEXO_ADMIN=state.user.role==="admin";
  window.AGRONEXO_USER=state.user;
  const route=resolveEntry({
@@ -91,6 +136,8 @@ async function boot(){
  if(recovery){renderRecoveryConfirm();return}
  if(invite){renderInvitation();return}
  if(new URLSearchParams(location.search).get("recuperar")==="1"){renderRecoveryRequest();return}
+ if(new URLSearchParams(location.search).get("offline")==="1"){renderOfflineUnlock();return}
+ if(navigator.onLine===false){renderOfflineUnlock();return}
  root.innerHTML='<div class="loading"><span class="load-orbit"></span><h2>AGRONEXO</h2><p>Verificando acesso...</p></div>';
  try{
   const response=await fetch("/api/auth",{credentials:"same-origin",cache:"no-store"});
@@ -100,15 +147,20 @@ async function boot(){
   state=data;
   if(data.locked){renderPin(!data.pinSet);return}
   await enterApp();
- }catch(e){renderLogin("Não foi possível verificar a conexão. Confira sua internet.")}
+ }catch(e){if(offlineInfo())renderOfflineUnlock();else renderLogin("Sem conexão. Faça seu primeiro login com internet para habilitar o modo offline.")}
 }
 document.addEventListener("submit",async e=>{
- if(!["login-form","pin-form","invite-form","recovery-form","recovery-confirm-form"].includes(e.target?.id))return;
+ if(!["login-form","pin-form","invite-form","recovery-form","recovery-confirm-form","offline-form"].includes(e.target?.id))return;
  e.preventDefault();if(loading)return;loading=true;
  const button=e.target.querySelector("button[type=submit]");
  if(button)button.disabled=true;
  error("");
  try{
+  if(e.target.id==="offline-form"){
+   await enterOffline(document.querySelector("#offline-pin").value);
+   return;
+  }
+  let pinForOffline=null;
   if(e.target.id==="recovery-form"){
    await call("request-recovery",{email:document.querySelector("#recovery-email").value.trim()});
    const note=document.querySelector("#auth-error");
@@ -130,8 +182,13 @@ document.addEventListener("submit",async e=>{
    const pin=document.querySelector("#login-pin").value;
    if(!/^\d{4}$/.test(pin))throw Error("Informe exatamente quatro números.");
    await call("pin",{mode:root.dataset.pinMode,pin});
+   pinForOffline=pin;
   }
   await boot();
+  // Só registra permissão offline após a autenticação real do PIN no Supabase.
+  if(pinForOffline&&state?.user&&!state.locked){
+   await authorizeOffline({pin:pinForOffline,user:state.user}).catch(()=>{});
+  }
  }catch(err){error(err.message)}finally{loading=false;if(button?.isConnected)button.disabled=false}
 });
 document.addEventListener("click",async e=>{
@@ -139,7 +196,8 @@ document.addEventListener("click",async e=>{
  if(!el)return;
  if(el.dataset.authAction==="recovery"){location.href="/?recuperar=1";return}
  if(el.dataset.authAction==="back-login"){location.href="/";return}
- if(el.dataset.authAction==="logout"){await call("logout").catch(()=>{});location.replace("/");return}
+ if(el.dataset.authAction==="offline"){location.href="/?offline=1";return}
+ if(el.dataset.authAction==="logout"){revokeOffline();await call("logout").catch(()=>{});location.replace("/");return}
  if(el.dataset.authAction==="install"){
   if(installEvent){installEvent.prompt();await installEvent.userChoice;installEvent=null}
   else alert("No Android/Chrome: menu ⋮ → Instalar aplicativo. No iPhone/iPad: Compartilhar → Adicionar à Tela de Início.");
