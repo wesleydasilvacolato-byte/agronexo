@@ -368,8 +368,9 @@ workspaceSync=createWorkspaceSync({
  apply:remote=>{state=normalizeState(remote);try{persistLocal()}catch{};if(!chatBusy)renderContent()},
  status:(status,pending)=>{cloudState=status;pendingSync=pending;syncDisplay()}
 });
-app.innerHTML='<div class="loading"><span class="load-orbit"></span><h2>AGRONEXO</h2><p>Carregando seus registros com segurança...</p></div>';
-await workspaceSync.syncNow();
+// Exibir a cópia local imediatamente. A sincronização da nuvem nunca deve
+// bloquear a inicialização, mesmo com internet ruim ou Supabase lento.
+shell();
 workspaceSync.start();
 window.addEventListener("agronexo:authenticated",()=>{cloudState="syncing";syncDisplay();workspaceSync.syncNow()});
-shell();
+workspaceSync.syncNow().catch(()=>{cloudState="offline";syncDisplay()});
