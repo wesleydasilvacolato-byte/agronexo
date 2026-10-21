@@ -1,6 +1,6 @@
 {
   "name": "agronexo",
-  "version": "1.8.0-beta",
+  "version": "1.8.1-beta",
   "private": true,
   "type": "module",
   "description": "Plataforma de apoio agronômico",
@@ -10,9 +10,9 @@
   "scripts": {
     "start": "vercel dev",
     "build": "npm run test:syntax && npm test && node scripts/build-agrofit.mjs && npm run test:index",
-    "test": "node --test tests/calculators.test.mjs tests/frontend-smoke.test.mjs tests/auth-pwa.test.mjs tests/admin-routing.test.mjs tests/workspace-sync.test.mjs tests/offline-first.test.mjs",
+    "test": "node --test tests/calculators.test.mjs tests/frontend-smoke.test.mjs tests/auth-pwa.test.mjs tests/admin-routing.test.mjs tests/workspace-sync.test.mjs tests/offline-first.test.mjs tests/install-app.test.mjs",
     "test:index": "node --test tests/agrofit-index.test.mjs",
-    "test:security": "node --test tests/security.test.mjs tests/mobile.test.mjs tests/auth-pwa.test.mjs tests/workspace-sync.test.mjs tests/offline-first.test.mjs",
+    "test:security": "node --test tests/security.test.mjs tests/mobile.test.mjs tests/auth-pwa.test.mjs tests/workspace-sync.test.mjs tests/offline-first.test.mjs tests/install-app.test.mjs",
     "bootstrap:admin": "node scripts/bootstrap-admin.mjs",
     "test:syntax": "node --check src/boot.js && node --check src/app.js && node --check src/admin.js && node --check src/install-app.js && node --check src/offline-access.js && node --check src/workspace-sync.js && node --check sw.js && node --check api/auth.js && node --check api/workspace.js"
   },
