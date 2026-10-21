@@ -44,7 +44,7 @@ export function createAppInstaller({win=window,doc=document,nav=navigator}={}){
    if(e.target===panel||e.target.closest?.("[data-install-close]"))close();
    if(e.target.closest?.("[data-install-confirm]")){
     const prompt=deferred;deferred=null;close();
-    if(prompt)prompt.prompt().then?.(()=>{}); // Some browsers return void.
+    if(prompt)Promise.resolve(prompt.prompt()).catch(()=>{});
    }
   });
   doc.body.append(panel);
