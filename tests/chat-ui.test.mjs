@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {sortedChats,renameChat,pinChat,removeChat,previewChat} from "../src/chat-management.js";
+import {sortedChats,renameChat,pinChat,removeChat,previewChat,restoredChatScroll} from "../src/chat-management.js";
 import {renderAssistant,mathHtml} from "../src/chat-format.js";
 const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
 const chats=[
@@ -74,4 +74,17 @@ test("UI inclui controles, pesquisa e layout de celular e tablet",()=>{
  assert.match(css,/\.chat-frame\.show-history/);
  assert.match(sw,/"\/src\/chat-format.js"/);
  assert.match(build,/"src\/chat-format.js"/);
+});
+
+test("sincronização preserva leitura e segue o fim apenas se já estava no fim",()=>{
+ assert.equal(restoredChatScroll(800,1100,300,1300,300),1000);
+ assert.equal(restoredChatScroll(200,1100,300,1300,300),400);
+ assert.equal(restoredChatScroll(0,300,300,1000,300),700);
+ assert.equal(restoredChatScroll(NaN,0,0,1000,300),700);
+});
+test("sync do Sebastião preserva rascunho, cursor e scroll",()=>{
+ const app=read("src/app.js");
+ assert.match(app,/previousScroll:oldChatId===state.selectedChat/);
+ assert.match(app,/restoredChatScroll\(/);
+ assert.match(app,/setSelectionRange\(selection.start,selection.end\)/);
 });
