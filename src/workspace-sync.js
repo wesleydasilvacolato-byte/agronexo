@@ -136,7 +136,8 @@ export function createWorkspaceSync({userId,storage,read,apply,status,fetcher=fe
   window.addEventListener("online",syncNow);
   window.addEventListener("focus",syncNow);
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)syncNow()});
-  setInterval(()=>{if(!document.hidden)syncNow()},45000);
+  const interval=setInterval(()=>{if(!document.hidden)syncNow()},45000);
+  interval?.unref?.();
  };
  return {save,start,syncNow,pendingCount:()=>pending.length,refresh:syncNow};
 }
