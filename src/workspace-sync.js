@@ -46,7 +46,7 @@ export const mergeRemote=(current,serverRecords,pending=[])=>{
  if(!data.chats.some(x=>x.id===current.selectedChat))data.selectedChat=null;
  return data;
 };
-export function createWorkspaceSync({userId,storage,read,apply,status,fetcher=fetch}){
+export function createWorkspaceSync({userId,storage,read,apply,status,fetcher=fetch,canSync=()=>true}){
  const prefix="agronexo-cloud-v1:"+userId;
  const doneKey=prefix+":migrated",queueKey=prefix+":queue";
  let baseline=structuredClone(read()),running=null,timer=null;
@@ -96,12 +96,14 @@ export function createWorkspaceSync({userId,storage,read,apply,status,fetcher=fe
  }
  async function pull(){
   const response=await request("GET");
+  if(!canSync())throw Error("Aguarde a conclusão da conversa antes de atualizar.");
   const remote=mergeRemote(read(),response.records||[],pending);
   apply(remote);
   baseline=structuredClone(read());
  }
  const syncNow=()=>{
   if(running)return running;
+  if(!canSync())return Promise.resolve(false);
   running=(async()=>{
    publish("syncing");
    try{
