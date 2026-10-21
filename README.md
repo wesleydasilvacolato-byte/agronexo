@@ -15,7 +15,7 @@ Configure **GEMINI_API_KEY** (e opcionalmente **GEMINI_MODEL**) exclusivamente n
 
 > **Termos do Gemini:** o uso de Google AI Studio/Gemini API exige idade mínima de 18 anos e restringe clientes de API que provavelmente possam ser acessados por menores. A integração está pronta, mas deve permanecer sem credencial até existir operador e público elegíveis e controles de acesso adequados. Consulte [termos oficiais](https://ai.google.dev/gemini-api/terms).
 
-A modalidade gratuita do Gemini não oferece capacidade ilimitada; limites do Google são por projeto/modelo. O histórico do chat nesta versão fica no **navegador**, sem sincronização entre dispositivos. Para uso público ou comercial, implemente autenticação, limitação persistente de consumo, políticas de privacidade e backups.
+A modalidade gratuita do Gemini não oferece capacidade ilimitada; limites do Google são por projeto/modelo. O histórico do chat textual, assim como projetos, cotações e caderno de campo, é sincronizado no **Supabase por conta** desde a versão 1.7, com cópia local para indisponibilidade de rede. O histórico das calculadoras permanece local. Para uso público ou comercial, implemente autenticação, limitação persistente de consumo, políticas de privacidade e backups.
 
 > **Aviso agronômico:** informações e estimativas não substituem recomendações oficiais, rótulo/bula vigente, laboratório, engenheiro agrônomo ou responsável técnico habilitado.
 
@@ -81,3 +81,14 @@ Diagnóstico simples: `/api/bulario?status=1` (informará a data de construção
 5. **Teste manual em dispositivos físicos**, observabilidade, testes de penetração e validação agronômica da precisão das recomendações e fórmulas.
 
 A implantação de uma interface responsiva não torna a plataforma automaticamente segura para produção. Não publique o acesso a uma grande audiência sem concluir os itens acima.
+
+## Sincronização entre dispositivos (v1.7)
+
+- A tabela `public.agronexo_workspace_records` aplica políticas RLS para leitura/gravação apenas pelo proprietário autenticado. A API `/api/workspace` valida sessão, PIN e identidade do usuário no servidor, sem aceitar `user_id` de clientes.
+- Coleções sincronizadas: propriedades/projetos, cotações, caderno de campo e conversas textuais do Sebastião. Arquivos anexados ao chat não são armazenados; somente mensagem e transcrição ficam no histórico.
+- Na primeira abertura após atualização, os dados antigos deste navegador são importados sem substituir registros existentes na nuvem. A cópia local permanece. Para migrar dados de outros aparelhos, entre no mesmo usuário em cada dispositivo.
+- Uma fila local conserva inclusões, edições e exclusões durante falha de conexão. A sincronização é reexecutada ao recuperar foco ou conexão e pelo botão em Configurações. Exclusões usam marcadores persistentes para impedir restauração involuntária.
+- O histórico das calculadoras permanece no armazenamento do navegador. Colisões simultâneas sobre o MESMO item são resolvidas pela última gravação confirmada; evite editar a mesma conversa em dois dispositivos ao mesmo tempo.
+- A tela de configurações mostra o estado da sincronização. Use **Exportar backup JSON** antes de limpar o navegador.
+- Migração SQL: `sql/003_workspace_sync.sql`. Testes: `tests/workspace-sync.test.mjs`.
+
