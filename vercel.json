@@ -16,6 +16,9 @@
     },
     "api/status.js": {
       "maxDuration": 30
+    },
+    "api/workspace.js": {
+      "maxDuration": 30
     }
   },
   "headers": [
