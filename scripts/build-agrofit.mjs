@@ -140,6 +140,7 @@ async function prepareStatic(){
   ["manifest.webmanifest","manifest.webmanifest"],
   ["sw.js","sw.js"],
   ["src/boot.js","src/boot.js"],
+  ["src/offline-access.js","src/offline-access.js"],
   ["src/routing.js","src/routing.js"],
   ["src/workspace-sync.js","src/workspace-sync.js"],
   ["src/admin.js","src/admin.js"],
