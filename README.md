@@ -92,3 +92,13 @@ A implantação de uma interface responsiva não torna a plataforma automaticame
 - A tela de configurações mostra o estado da sincronização. Use **Exportar backup JSON** antes de limpar o navegador.
 - Migração SQL: `sql/003_workspace_sync.sql`. Testes: `tests/workspace-sync.test.mjs`.
 
+
+## Modo offline (v1.8)
+- **Primeiro acesso online obrigatório.** Após autenticar e validar o PIN online, o aparelho recebe uma autorização offline de até sete dias. A opção **Configurações → Habilitar acesso offline** permite renovar a autorização digitando o PIN novamente enquanto há internet.
+- O PWA guarda **somente HTML, CSS, JavaScript, ícones e o manifesto públicos** em Cache Storage. Endpoints `/api/*`, credenciais e conteúdo pessoal não são adicionados ao cache da service worker.
+- Para abrir com internet indisponível, abra o aplicativo já instalado (ou a página previamente cacheada) e digite o PIN offline. Depois é possível abrir **calculadoras**, salvar resultados no histórico local, ver/escrever **caderno de campo**, projetos e cotações e consultar conversas textuais já sincronizadas.
+- **Sebastião IA, novas transcrições e busca no AGROFIT exigem internet. O painel administrativo não é liberado offline.** O resultado de cálculos permanece local; os projetos, cotações, notas e conversas do Sebastião usam a fila `agronexo-cloud-v1` previamente implementada.
+- Ao retornar a conexão o cliente só envia pendências depois de revalidar a sessão e o PIN online. Se tiver expirado, use **Configurações → Entrar novamente para sincronizar**, que não apaga o cache de dados nem a fila de trabalho.
+- O PIN não é armazenado em texto simples. A autorização local é cifrada com chave derivada via PBKDF2/AES-GCM no WebCrypto e aplica bloqueio após erros. **Os documentos pessoais já salvos no localStorage não estão criptografados; não utilizar dispositivos compartilhados ou comprometidos.** A revogação de usuários não pode ser aplicada ao aparelho até ele conectar ou a autorização offline expirar em até sete dias.
+- Não remova os dados do navegador nem desinstale o PWA antes de ver **Salvo na nuvem** e exportar um backup. Armazenamento do navegador pode ser removido pelo sistema operacional em caso de espaço insuficiente.
+- Testes automatizados em `tests/offline-first.test.mjs` validam PIN, bloqueio, expiração e cache. Teste real em Android/iPhone com modo avião continua recomendado.
