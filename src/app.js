@@ -2,7 +2,7 @@ import {CALCS,GROUPS,runCalc} from "./calculators.js";
 import {ASSETS} from "./brand-assets.js";
 import {createWorkspaceSync} from "./workspace-sync.js";
 import {revokeOffline} from "./offline-access.js";
-import {sortedChats,renameChat,pinChat,removeChat,previewChat} from "./chat-management.js";
+import {sortedChats,renameChat,pinChat,removeChat,previewChat,restoredChatScroll} from "./chat-management.js";
 import {renderAssistant} from "./chat-format.js";
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -195,7 +195,7 @@ function chatListMarkup(){
 function refreshChatList(){
  const list=$("#chat-list");if(list)list.innerHTML=chatListMarkup();
 }
-function chat(root){
+function chat(root,{previousScroll=null}={}){
  const c=activeChat(),pinnedCount=state.chats.filter(c=>c.pinned).length;
  const messages=c.messages.length?c.messages.map((m,i)=>{
   const ai=m.role!=="user",time=new Date(m.time||Date.now()).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
@@ -224,7 +224,8 @@ function chat(root){
  '<button type="button" class="round send" data-action="send-chat" title="Enviar mensagem" aria-label="Enviar mensagem">↑</button></div>'+
  '<div class="chat-disclaimer">Respostas geradas por IA podem conter erros. Confira bulas, fontes oficiais e orientações técnicas.</div>'+
  '<input id="chat-file" type="file" accept="image/*,video/*,audio/*" hidden multiple></div></section></div>';
- setTimeout(()=>{const pane=$("#messages");if(pane)pane.scrollTop=pane.scrollHeight},0);
+ setTimeout(()=>{const pane=$("#messages");if(pane)pane.scrollTop=previousScroll?
+  restoredChatScroll(previousScroll.top,previousScroll.height,previousScroll.viewport,pane.scrollHeight,pane.clientHeight):pane.scrollHeight},0);
 }
 
 async function readFile(f){const limit=12*1024*1024;if(f.size>limit)throw Error("Arquivo muito grande: máximo de 12 MB.");return await new Promise((resolve,reject)=>{const rd=new FileReader();rd.onload=()=>resolve(String(rd.result));rd.onerror=reject;rd.readAsDataURL(f)})}
@@ -467,15 +468,28 @@ const userId=String(window.AGRONEXO_USER?.id||"");
 workspaceSync=createWorkspaceSync({
  userId,storage:localStorage,read:()=>state,canSync:()=>!chatBusy&&!window.AGRONEXO_OFFLINE,
  apply:remote=>{
-  // Não apagar a mensagem que o usuário está digitando quando a nuvem atualizar.
-  const field=$("#chat-text"),draft=page==="chat"?field?.value:null;
+  // Preservar rascunho, seleção e rolagem ao receber dados da nuvem.
+  const field=page==="chat"?$("#chat-text"):null,draft=field?.value;
+  const pane=page==="chat"?$("#messages"):null,oldChatId=state.selectedChat;
+  const previousScroll=pane?{top:pane.scrollTop,height:pane.scrollHeight,viewport:pane.clientHeight}:null;
   const wasFocused=!!field&&document.activeElement===field;
+  const selection=wasFocused?{start:field.selectionStart,end:field.selectionEnd}:null;
   state=normalizeState(remote);
   try{persistLocal()}catch{}
   if(!chatBusy){
-   renderContent();
+   if(page==="chat")chat($("#content"),{previousScroll:oldChatId===state.selectedChat?previousScroll:null});
+   else renderContent();
    const restored=page==="chat"&&draft!=null?$("#chat-text"):null;
-   if(restored){restored.value=draft;restored.style.height="auto";restored.style.height=Math.min(restored.scrollHeight,132)+"px";if(wasFocused)restored.focus()}
+   if(restored){
+    restored.value=draft;
+    restored.style.height="auto";
+    restored.style.height=Math.min(restored.scrollHeight,132)+"px";
+    if(wasFocused){
+     restored.focus({preventScroll:true});
+     if(selection&&Number.isInteger(selection.start)&&Number.isInteger(selection.end))
+      restored.setSelectionRange(selection.start,selection.end);
+    }
+   }
   }
  },
  status:(status,pending)=>{cloudState=status;pendingSync=pending;syncDisplay()}
