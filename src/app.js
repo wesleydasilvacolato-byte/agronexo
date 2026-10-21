@@ -36,7 +36,7 @@ const save=()=>{try{persistLocal();workspaceSync?.save()}catch{toast("Armazename
 const syncLabels={syncing:"Sincronizando",synced:"Salvo na nuvem",offline:"Offline · dados locais",pending:"Alterações pendentes",quota:"Memória local cheia"};
 function syncDisplay(){
  const message=(syncLabels[cloudState]||"Aguardando")+(pendingSync?" ("+pendingSync+")":"");
- for(const el of document.querySelectorAll("[data-cloud-status]"))el.textContent=message;
+ for(const el of (document.querySelectorAll?.("[data-cloud-status]")||[]))el.textContent=message;
 }
 const app=$("#app");
 function updateVisualHeight(){
