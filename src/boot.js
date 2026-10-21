@@ -30,7 +30,7 @@ function renderLogin(msg=""){
  '<button class="auth-primary" type="submit">Entrar na plataforma</button></form>'+
  '<button class="auth-link" type="button" data-auth-action="recovery">Esqueci minha senha</button>'+
  '<button class="auth-link" type="button" data-auth-action="install">Instalar AGRONEXO no dispositivo</button>'+
- (offlineInfo() ? '<button class="auth-link" type="button" data-auth-action="offline">Abrir sem internet</button>':"")');
+ (offlineInfo() ? '<button class="auth-link" type="button" data-auth-action="offline">Abrir sem internet</button>':""));
 }
 function renderInvitation(){
  body('<h1>Ativar sua conta</h1><p class="auth-muted">Confirme seu convite de administrador e escolha uma senha nova, com pelo menos 12 caracteres.</p>'+
