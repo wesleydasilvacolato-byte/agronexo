@@ -10,7 +10,7 @@ export function sortedChats(items=[]){
 export function renameChat(items,id,title){
  const value=String(title||"").replace(/\s+/g," ").trim().slice(0,80);
  if(!value)throw new Error("Digite um nome para a conversa.");
- return items.map(c=>String(c.id)===String(id)?{...c,title:value}:c);
+ return items.map(c=>String(c.id)===String(id)?{...c,title:value,customTitle:true}:c);
 }
 export function pinChat(items,id){
  return items.map(c=>String(c.id)===String(id)?{...c,pinned:!Boolean(c.pinned)}:c);
