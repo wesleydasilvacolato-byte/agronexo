@@ -297,6 +297,7 @@ async function sendChat(){
     (videos.length?"\n[Vídeo curto enviado]":"");
   const entry={role:"user",content:display,time:new Date().toISOString()};
   conversation.messages.push(entry);
+  conversation.updatedAt=new Date().toISOString();
   if(conversation.messages.length===1&&!conversation.customTitle)conversation.title=(content||"Mensagem multimídia").slice(0,50);
   save();
   if(page==="chat"&&state.selectedChat===conversation.id)chat($("#content"));
@@ -316,9 +317,11 @@ async function sendChat(){
     try{payload=await response.json()}catch{throw Error("Resposta inesperada do servidor. Confira a publicação da API.")}
     if(!response.ok)throw Error(payload.error||"A consulta não foi concluída.");
     conversation.messages.push({role:"assistant",content:payload.reply||"Sem resposta do modelo.",time:new Date().toISOString()});
+    conversation.updatedAt=new Date().toISOString();
     save();
   }catch(err){
     conversation.messages.push({role:"assistant",content:"Não foi possível processar: "+err.message,time:new Date().toISOString()});
+    conversation.updatedAt=new Date().toISOString();
     save();
   }finally{chatBusy=false;if(page==="chat"&&state.selectedChat===conversation.id)chat($("#content"));workspaceSync?.syncNow()}
 }
