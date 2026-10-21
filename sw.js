@@ -1,7 +1,16 @@
-const CACHE="agronexo-static-v2.2-sebastiao";
+const CACHE="agronexo-static-v2.3-revisao-offline";
 const ASSETS=["/","/index.html","/admin.html","/style.css","/auth.css","/src/boot.js","/src/offline-access.js","/src/install-app.js","/src/chat-management.js","/src/chat-format.js","/src/routing.js","/src/workspace-sync.js","/src/app.js","/src/admin.js","/src/calculators.js","/src/brand-assets.js","/icons/icon-192.png","/icons/icon-512.png","/manifest.webmanifest"];
 self.addEventListener("install",event=>{
- event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()).catch(()=>self.skipWaiting()));
+ event.waitUntil((async()=>{
+  // Um único recurso temporariamente indisponível não deve cancelar todo
+  // o pré-cache (ex.: ícone ou fonte enquanto a conexão oscila).
+  try{
+   const cache=await caches.open(CACHE);
+   await Promise.allSettled(ASSETS.map(asset=>cache.add(asset)));
+  }finally{
+   await self.skipWaiting();
+  }
+ })());
 });
 self.addEventListener("activate",event=>{
  event.waitUntil(caches.keys().then(names=>Promise.all(names.filter(n=>n!==CACHE).map(n=>caches.delete(n)))).then(()=>self.clients.claim()));
