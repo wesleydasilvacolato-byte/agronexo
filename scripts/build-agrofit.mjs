@@ -141,6 +141,7 @@ async function prepareStatic(){
   ["sw.js","sw.js"],
   ["src/boot.js","src/boot.js"],
   ["src/routing.js","src/routing.js"],
+  ["src/workspace-sync.js","src/workspace-sync.js"],
   ["src/admin.js","src/admin.js"],
   ["src/app.js","src/app.js"],
   ["src/calculators.js","src/calculators.js"],
