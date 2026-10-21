@@ -142,6 +142,8 @@ async function prepareStatic(){
   ["src/boot.js","src/boot.js"],
   ["src/offline-access.js","src/offline-access.js"],
   ["src/install-app.js","src/install-app.js"],
+  ["src/chat-management.js","src/chat-management.js"],
+  ["src/chat-format.js","src/chat-format.js"],
   ["src/routing.js","src/routing.js"],
   ["src/workspace-sync.js","src/workspace-sync.js"],
   ["src/admin.js","src/admin.js"],
