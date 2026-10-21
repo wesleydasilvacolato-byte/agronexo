@@ -40,7 +40,7 @@ function userCard(u){
 }
 function render(){
  const user=window.AGRONEXO_USER||{};
- root.innerHTML='<div class="admin-shell"><header class="admin-header"><div class="admin-brand"><img src="'+ASSETS.icon+'" alt="Agronexo"><div><strong>AGRONEXO</strong><small>Painel Administrativo</small></div></div><div class="admin-head-actions"><span>'+esc(user.name||"Administrador")+'</span><button data-admin-action="workspace">Plataforma</button><button data-admin-action="logout">Sair</button></div></header>'+
+ root.innerHTML='<div class="admin-shell"><header class="admin-header"><div class="admin-brand"><img src="'+ASSETS.icon+'" alt="Agronexo"><div><strong>AGRONEXO</strong><small>Painel Administrativo</small></div></div><div class="admin-head-actions"><span>'+esc(user.name||"Administrador")+'</span><button data-admin-action="install">Instalar app</button><button data-admin-action="workspace">Plataforma</button><button data-admin-action="logout">Sair</button></div></header>'+
  '<main class="admin-body"><div class="admin-intro"><div><span class="admin-label">CONTROLE E SEGURANÇA</span><h1>Administração</h1><p>Gerencie acessos, acompanhe a atividade e proteja a plataforma.</p></div><button class="admin-primary" data-admin-action="new">+ Novo usuário</button></div>'+
  '<div class="admin-metrics">'+summary().map(([ico,label,value])=>'<div class="admin-metric"><span>'+label+'</span><strong>'+Number(value).toLocaleString("pt-BR")+'</strong></div>').join("")+'</div>'+
  '<nav class="admin-tabs" aria-label="Seções administrativas">'+[["users","Usuários"],["audit","Histórico de ações"],["system","Plataforma"]].map(([id,name])=>'<button class="'+(tab===id?"selected":"")+'" data-admin-tab="'+id+'">'+name+'</button>').join("")+'</nav>'+
@@ -63,7 +63,7 @@ function systemTab(){
  '<div><h3>PIN de 4 números</h3><p>Vinculado à sessão autenticada; cinco tentativas incorretas bloqueiam o PIN por quinze minutos.</p></div>'+
  '<div><h3>Contagem de ativos</h3><p>Aproximação com base no último acesso autenticado em até 15 minutos, não um rastreamento de presença em tempo real.</p></div>'+
  '<div><h3>Instalação como aplicativo</h3><p>No Android ou tablet, acesse o AGRONEXO pelo Chrome e use Instalar aplicativo. No iOS, use Compartilhar → Adicionar à Tela de Início.</p></div>'+
- '<div><h3>Dados e backups</h3><p>O painel administra as contas. Conversas e dados operacionais ainda ficam no navegador de cada usuário até a implantação do banco de documentos.</p></div></div>';
+ '<div><h3>Dados e backups</h3><p>O painel administra as contas. Projetos, cotações, anotações e conversas são sincronizados por conta no Supabase, com fila local quando não há conexão.</p></div></div>';
 }
 function modal(title,html){
  const div=document.createElement("div");div.className="admin-backdrop";div.innerHTML='<section class="admin-dialog" role="dialog" aria-modal="true"><div class="admin-dialog-title"><h2>'+title+'</h2><button data-admin-action="close">✕</button></div>'+html+'</section>';
@@ -89,6 +89,7 @@ document.addEventListener("click",async e=>{
  const action=btn.dataset.adminAction;
  if(action==="close"){document.querySelector(".admin-backdrop")?.remove();return}
  if(action==="new"){newUser();return}
+ if(action==="install"){window.AGRONEXO_INSTALL?.();return}
  if(action==="workspace"){location.href="/?modo=plataforma";return}
  if(action==="logout"){await fetch("/api/auth",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"logout"})});location.replace("/");return}
  if(action==="reset-password"){resetPassword(btn.dataset.id);return}
